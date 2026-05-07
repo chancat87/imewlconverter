@@ -42,6 +42,7 @@ internal class PinyinTest
     [TestCase("快乐", "kuai le")]
     [TestCase("银行", "yin hang")]
     [TestCase("行走", "xing zou")]
+    [TestCase("〇〇七", "ling ling qi")]
     public void TestGetLongWordsPinyin(string str, string py)
     {
         var result = generater.GetCodeOfString(str);

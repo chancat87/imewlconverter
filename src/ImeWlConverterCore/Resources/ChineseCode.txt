@@ -1,3 +1,4 @@
+U+3007	〇	llll	llll	llll	ling2	668.64
 U+4E00	一	ggll	ggll	ggll	yi1	37283.98
 U+4E01	丁	sgh	sgh	sgh	ding1	537.12
 U+4E02	丂	gnv	gnv	gnv	kao3,yu2	0

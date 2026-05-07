@@ -537,7 +537,7 @@ public class MainBody : IDisposable
         // Regex fullWidthRegex = new Regex("[ａ-ｚＡ-Ｚ０-９]+");
         // Regex punctuationRegex = new Regex("[-・·&%']");
         var punctuationRegex = new Regex(
-            "[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u008f\u00a0-\u00bf\u00d7\u00f7\u2000-\u2bff\u3000-\u303f\u30a0\u30fb\uff01-\uff0f\uff1a-\uff20\uff5b-\uff65]"
+            "[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u008f\u00a0-\u00bf\u00d7\u00f7\u2000-\u2bff\u3000-\u3006\u3008-\u303f\u30a0\u30fb\uff01-\uff0f\uff1a-\uff20\uff5b-\uff65]"
         );
 
         foreach (var wordLibrary in wordLibraryList)

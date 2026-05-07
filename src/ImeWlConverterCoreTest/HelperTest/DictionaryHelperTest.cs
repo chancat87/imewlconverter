@@ -23,6 +23,7 @@ namespace Studyzy.IMEWLConverter.Test.HelperTest;
 internal class DictionaryHelperTest
 {
     [TestCase('曾', "uljf")]
+    [TestCase('〇', "llll")]
     public void TestGetCharCode(char c, string code)
     {
         var codes = DictionaryHelper.GetCode(c);
