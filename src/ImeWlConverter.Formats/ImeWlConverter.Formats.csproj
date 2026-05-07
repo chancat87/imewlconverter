@@ -7,6 +7,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\ImeWlConverter.Abstractions\ImeWlConverter.Abstractions.csproj"/>
+        <ProjectReference Include="..\ImeWlConverterCore\ImeWlConverterCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\ImeWlConverter.SourceGenerators\ImeWlConverter.SourceGenerators.csproj"

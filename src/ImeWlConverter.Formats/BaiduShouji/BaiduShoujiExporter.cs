@@ -1,0 +1,24 @@
+namespace ImeWlConverter.Formats.BaiduShouji;
+
+using System.Text;
+using ImeWlConverter.Abstractions;
+using ImeWlConverter.Abstractions.Models;
+using ImeWlConverter.Formats.Shared;
+
+/// <summary>Baidu Mobile dictionary exporter. Format: word(pin|yin) 20000</summary>
+[FormatPlugin("bdsj", "百度手机", 1000)]
+public sealed class BaiduShoujiExporter : TextFormatExporter
+{
+    protected override Encoding FileEncoding => Encoding.Unicode;
+
+    public override FormatMetadata Metadata { get; } = new(
+        "bdsj", "百度手机", 1000, SupportsImport: false, SupportsExport: true);
+
+    protected override string? FormatEntry(WordEntry entry)
+    {
+        var pinyin = entry.Code?.GetPrimaryCode("|") ?? "";
+        if (string.IsNullOrEmpty(pinyin))
+            return null;
+        return $"{entry.Word}({pinyin}) 20000";
+    }
+}
