@@ -252,42 +252,26 @@ public static class CommandBuilder
 
     private static void ShowSupportedFormats()
     {
-        Console.WriteLine("支持的输入法格式：");
-        Console.WriteLine();
+        var (imports, exports) = FormatRegistrar.RegisterAll();
 
-        // TODO: 这里应该从 ConsoleRun 获取实际的格式列表
-        // 暂时硬编码一些常用格式作为示例
-        var formats = new Dictionary<string, string>
+        Console.WriteLine("支持的输入格式：");
+        foreach (var kvp in imports.OrderBy(k => k.Key))
         {
-            { "scel", "搜狗拼音细胞词库 (.scel)" },
-            { "ggpy", "谷歌拼音" },
-            { "qqpy", "QQ 拼音文本格式" },
-            { "qpyd", "QQ 拼音分类词库 (.qpyd)" },
-            { "qcel", "QQ 拼音细胞词库 (.qcel)" },
-            { "rime", "Rime 输入法" },
-            { "bdpy", "百度拼音" },
-            { "bdict", "百度拼音二进制格式 (.bdict)" },
-            { "self", "自定义格式" },
-            { "pyjj", "拼音加加" },
-            { "zgpy", "紫光拼音" },
-            { "libpy", "libpinyin (Linux)" },
-            { "fit", "FIT 输入法 (Mac)" },
-            { "plist", "macOS 系统拼音" },
-        };
-
-        foreach (var (code, name) in formats.OrderBy(f => f.Key))
-        {
-            Console.WriteLine($"  {code,-10} - {name}");
+            Console.WriteLine($"  {kvp.Key,-15} {kvp.Value.GetType().Name}");
         }
 
         Console.WriteLine();
-        Console.WriteLine("使用 --help 查看完整帮助信息");
+        Console.WriteLine("支持的输出格式：");
+        foreach (var kvp in exports.OrderBy(k => k.Key))
+        {
+            Console.WriteLine($"  {kvp.Key,-15} {kvp.Value.GetType().Name}");
+        }
     }
 
     private static void ExecuteConversion(CommandLineOptions options)
     {
-        // 创建 ConsoleRun 实例并执行转换
-        var consoleRun = new ConsoleRun();
+        var (imports, exports) = FormatRegistrar.RegisterAll();
+        var consoleRun = new ConsoleRun(imports, exports);
         consoleRun.Execute(options);
     }
 }
