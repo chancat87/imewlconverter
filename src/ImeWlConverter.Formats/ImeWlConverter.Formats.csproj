@@ -7,8 +7,6 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\ImeWlConverter.Abstractions\ImeWlConverter.Abstractions.csproj"/>
-        <!-- TODO: Remove ImeWlConverterCore dependency after full pipeline migration -->
-        <ProjectReference Include="..\ImeWlConverterCore\ImeWlConverterCore.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\ImeWlConverter.SourceGenerators\ImeWlConverter.SourceGenerators.csproj"
