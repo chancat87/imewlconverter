@@ -87,7 +87,7 @@ internal class CoreWinFormMapping
         );
     }
 
-    private void form_Closed(object sender, EventArgs e)
+    private void form_Closed(object sender, FormClosedEventArgs e)
     {
         var form = sender;
         var props = form.GetType().GetProperties();
@@ -114,7 +114,7 @@ internal class CoreWinFormMapping
             var form = imeFormMapping[t];
 
             ime = import;
-            form.Closed += form_Closed;
+            form.FormClosed += form_Closed;
 
             return form;
         }
@@ -132,7 +132,7 @@ internal class CoreWinFormMapping
             var form = imeFormMapping[t];
 
             ime = export;
-            form.Closed += form_Closed;
+            form.FormClosed += form_Closed;
 
             return form;
         }

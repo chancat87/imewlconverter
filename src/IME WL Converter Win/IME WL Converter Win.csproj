@@ -6,6 +6,7 @@
         <RootNamespace>Studyzy.IMEWLConverter</RootNamespace>
         <AssemblyName>深蓝词库转换</AssemblyName>
         <ApplicationIcon>app.ico</ApplicationIcon>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
         
         <!-- 禁用Windows SDK引用 -->
         <EnableWindowsTargeting>false</EnableWindowsTargeting>
