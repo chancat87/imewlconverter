@@ -30,14 +30,13 @@ public class LegacyImporterAdapterTest
     }
 
     [Theory]
-    [InlineData(OldCodeType.Unknown)]
-    [InlineData(OldCodeType.Yong)]
-    [InlineData(OldCodeType.InnerCode)]
-    [InlineData(OldCodeType.UserDefinePhrase)]
-    public void MapCodeType_UnmappedValues_DefaultToPinyin(OldCodeType old)
+    [InlineData(OldCodeType.Unknown, NewCodeType.Unknown)]
+    [InlineData(OldCodeType.Yong, NewCodeType.Yong)]
+    [InlineData(OldCodeType.InnerCode, NewCodeType.InnerCode)]
+    [InlineData(OldCodeType.UserDefinePhrase, NewCodeType.UserDefinePhrase)]
+    public void MapCodeType_UnmappedValues_DefaultToPinyin(OldCodeType old, NewCodeType expected)
     {
-        // These values currently map to Pinyin as a fallback
         var result = LegacyImporterAdapter.MapCodeType(old);
-        Assert.Equal(NewCodeType.Pinyin, result);
+        Assert.Equal(expected, result);
     }
 }

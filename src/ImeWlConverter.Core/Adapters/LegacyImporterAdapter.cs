@@ -120,7 +120,12 @@ public sealed class LegacyImporterAdapter : IFormatImporter
         OldCodeType.QingsongErbi => NewCodeType.QingsongErbi,
         OldCodeType.ChaoqiangErbi => NewCodeType.ChaoqiangErbi,
         OldCodeType.XiandaiErbi => NewCodeType.XiandaiErbi,
+        OldCodeType.ChaoqingYinxin => NewCodeType.YinxingErbi,
         OldCodeType.Chaoyin => NewCodeType.Chaoyin,
+        OldCodeType.Yong => NewCodeType.Yong,
+        OldCodeType.InnerCode => NewCodeType.InnerCode,
+        OldCodeType.UserDefinePhrase => NewCodeType.UserDefinePhrase,
+        OldCodeType.Unknown => NewCodeType.Unknown,
         _ => NewCodeType.Pinyin
     };
 }
