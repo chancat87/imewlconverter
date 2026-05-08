@@ -103,20 +103,6 @@ public static class FileOperationHelper
         if (!File.Exists(path)) return "";
         var c = GetEncodingType(path);
         return ReadFile(path, c);
-        //string ext = Path.GetExtension(path);
-        //if (ext == ".scel") //搜狗细胞词库
-        //{
-        //    return SougouPinyinScel.ReadScel(path);
-        //}
-        //else //文本
-        //{
-        //    //using (var sr = new StreamReader(path, GetType(path),true))
-        //    //{
-        //    //    return sr.ReadToEnd();
-        //    //}
-        //    Encoding c = Encoding.GetEncoding("GBK");
-        //    return ReadFileContent(path, ref c, Encoding.GetEncoding("GBK"));
-        //}
     }
 
     public static string ReadFile(string path, Encoding encoding)
@@ -341,168 +327,6 @@ public static class FileOperationHelper
         return new List<string>();
     }
 
-    //public static bool IsUnicode(Encoding encoding)
-    //{
-    //    int codepage = encoding.CodePage;
-    //    // return true if codepage is any UTF codepage
-    //    return codepage == 65001 || codepage == 65000 || codepage == 1200 || codepage == 1201;
-    //}
-
-    //public static string ReadFileContent(string fileName, ref Encoding encoding, Encoding defaultEncoding)
-    //{
-    //    using (var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
-    //    {
-    //        using (StreamReader reader = OpenStream(fs, encoding, defaultEncoding))
-    //        {
-    //            encoding = reader.CurrentEncoding;
-    //            return reader.ReadToEnd();
-    //        }
-    //    }
-    //}
-
-    //public static StreamReader OpenStream(FileStream fs, Encoding suggestedEncoding, Encoding defaultEncoding)
-    //{
-    //    if (fs.Length > 3)
-    //    {
-    //        // the autodetection of StreamReader is not capable of detecting the difference
-    //        // between ISO-8859-1 and UTF-8 without BOM.
-    //        int firstByte = fs.ReadByte();
-    //        int secondByte = fs.ReadByte();
-    //        switch ((firstByte << 8) | secondByte)
-    //        {
-    //            case 0x0000: // either UTF-32 Big Endian or a binary file; use StreamReader
-    //            case 0xfffe: // Unicode BOM (UTF-16 LE or UTF-32 LE)
-    //            case 0xfeff: // UTF-16 BE BOM
-    //            case 0xefbb: // start of UTF-8 BOM
-    //                // StreamReader autodetection works
-    //                fs.Position = 0;
-    //                return new StreamReader(fs);
-    //            default:
-    //                return AutoDetect(fs, (byte) firstByte, (byte) secondByte, defaultEncoding);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        if (suggestedEncoding != null)
-    //        {
-    //            return new StreamReader(fs, suggestedEncoding);
-    //        }
-    //        else
-    //        {
-    //            return new StreamReader(fs);
-    //        }
-    //    }
-    //}
-
-    //private static StreamReader AutoDetect(FileStream fs, byte firstByte, byte secondByte, Encoding defaultEncoding)
-    //{
-    //    var max = (int) Math.Min(fs.Length, 500000); // look at max. 500 KB
-    //    const int ASCII = 0;
-    //    const int Error = 1;
-    //    const int UTF8 = 2;
-    //    const int UTF8Sequence = 3;
-    //    int state = ASCII;
-    //    int sequenceLength = 0;
-    //    byte b;
-    //    for (int i = 0; i < max; i++)
-    //    {
-    //        if (i == 0)
-    //        {
-    //            b = firstByte;
-    //        }
-    //        else if (i == 1)
-    //        {
-    //            b = secondByte;
-    //        }
-    //        else
-    //        {
-    //            b = (byte) fs.ReadByte();
-    //        }
-    //        if (b < 0x80)
-    //        {
-    //            // normal ASCII character
-    //            if (state == UTF8Sequence)
-    //            {
-    //                state = Error;
-    //                break;
-    //            }
-    //        }
-    //        else if (b < 0xc0)
-    //        {
-    //            // 10xxxxxx : continues UTF8 byte sequence
-    //            if (state == UTF8Sequence)
-    //            {
-    //                --sequenceLength;
-    //                if (sequenceLength < 0)
-    //                {
-    //                    state = Error;
-    //                    break;
-    //                }
-    //                else if (sequenceLength == 0)
-    //                {
-    //                    state = UTF8;
-    //                }
-    //            }
-    //            else
-    //            {
-    //                state = Error;
-    //                break;
-    //            }
-    //        }
-    //        else if (b >= 0xc2 && b < 0xf5)
-    //        {
-    //            // beginning of byte sequence
-    //            if (state == UTF8 || state == ASCII)
-    //            {
-    //                state = UTF8Sequence;
-    //                if (b < 0xe0)
-    //                {
-    //                    sequenceLength = 1; // one more byte following
-    //                }
-    //                else if (b < 0xf0)
-    //                {
-    //                    sequenceLength = 2; // two more bytes following
-    //                }
-    //                else
-    //                {
-    //                    sequenceLength = 3; // three more bytes following
-    //                }
-    //            }
-    //            else
-    //            {
-    //                state = Error;
-    //                break;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            // 0xc0, 0xc1, 0xf5 to 0xff are invalid in UTF-8 (see RFC 3629)
-    //            state = Error;
-    //            break;
-    //        }
-    //    }
-    //    fs.Position = 0;
-    //    switch (state)
-    //    {
-    //        case ASCII:
-    //        case Error:
-    //            // when the file seems to be ASCII or non-UTF8,
-    //            // we read it using the user-specified encoding so it is saved again
-    //            // using that encoding.
-    //            if (IsUnicode(defaultEncoding))
-    //            {
-    //                // the file is not Unicode, so don't read it using Unicode even if the
-    //                // user has choosen Unicode as the default encoding.
-
-    //                // If we don't do this, SD will end up always adding a Byte Order Mark
-    //                // to ASCII files.
-    //                defaultEncoding = Encoding.GetEncoding("GBK"); // use system encoding instead
-    //            }
-    //            return new StreamReader(fs, defaultEncoding);
-    //        default:
-    //            return new StreamReader(fs);
-    //    }
-    //}
     /// <summary>
     ///     压缩文件
     /// </summary>
@@ -528,7 +352,6 @@ public static class FileOperationHelper
 
             fs = File.Create(zipedFile);
             zipStream = new ZipOutputStream(fs);
-            //if (!string.IsNullOrEmpty(password)) zipStream.Password = password;
             ent = new ZipEntry(Path.GetFileName(fileToZip));
             zipStream.PutNextEntry(ent);
             zipStream.SetLevel(6);
@@ -554,8 +377,6 @@ public static class FileOperationHelper
                 fs.Dispose();
             }
         }
-        //GC.Collect();
-        //GC.Collect(1);
 
         return result;
     }
@@ -583,7 +404,6 @@ public static class FileOperationHelper
         try
         {
             zipStream = new ZipInputStream(File.OpenRead(fileToUnZip));
-            //if (!string.IsNullOrEmpty(password)) zipStream.Password = password;
             while ((ent = zipStream.GetNextEntry()) != null)
                 if (!string.IsNullOrEmpty(ent.Name))
                 {
@@ -596,17 +416,6 @@ public static class FileOperationHelper
                         continue;
                     }
 
-                    //fs = File.Create(fileName);
-                    //int size = 2048;
-                    //byte[] data = new byte[size];
-                    //while (true)
-                    //{
-                    //    size = zipStream.Read(data, 0, data.Length);
-                    //    if (size > 0)
-                    //        fs.Write(data, 0, data.Length);
-                    //    else
-                    //        break;
-                    //}
                     using (var streamWriter = File.Create(fileName))
                     {
                         var buffer = new byte[10240];
@@ -638,8 +447,6 @@ public static class FileOperationHelper
             }
 
             if (ent != null) ent = null;
-            //GC.Collect();
-            //GC.Collect(1);
         }
 
         return result;

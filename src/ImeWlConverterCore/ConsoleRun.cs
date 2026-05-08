@@ -37,15 +37,34 @@ public class ConsoleRun
     private readonly List<ComboBoxShowAttribute> cbxExportItems = new();
     private readonly List<ComboBoxShowAttribute> cbxImportItems = new();
 
-    private readonly IDictionary<string, IWordLibraryExport> exports =
-        new Dictionary<string, IWordLibraryExport>();
+    private readonly IDictionary<string, IWordLibraryExport> exports;
+    private readonly IDictionary<string, IWordLibraryImport> imports;
 
-    private readonly IDictionary<string, IWordLibraryImport> imports =
-        new Dictionary<string, IWordLibraryImport>();
+    /// <summary>
+    /// 使用预注册的格式字典构造（DI 路径，无需反射）。
+    /// </summary>
+    public ConsoleRun(
+        IDictionary<string, IWordLibraryImport> imports,
+        IDictionary<string, IWordLibraryExport> exports)
+    {
+        this.imports = imports;
+        this.exports = exports;
+        foreach (var kvp in imports)
+            cbxImportItems.Add(new ComboBoxShowAttribute(kvp.Key, kvp.Key, 0));
+        foreach (var kvp in exports)
+            cbxExportItems.Add(new ComboBoxShowAttribute(kvp.Key, kvp.Key, 0));
+        cbxImportItems.Sort((a, b) => string.Compare(a.ShortCode, b.ShortCode, StringComparison.Ordinal));
+        cbxExportItems.Sort((a, b) => string.Compare(a.ShortCode, b.ShortCode, StringComparison.Ordinal));
+    }
 
+    /// <summary>
+    /// 使用反射扫描发现格式的旧构造函数，供 GUI 应用使用。
+    /// </summary>
     [RequiresUnreferencedCode("Calls LoadImeList()")]
     public ConsoleRun()
     {
+        imports = new Dictionary<string, IWordLibraryImport>();
+        exports = new Dictionary<string, IWordLibraryExport>();
         LoadImeList();
     }
 

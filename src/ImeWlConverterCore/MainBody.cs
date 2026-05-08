@@ -162,31 +162,6 @@ public class MainBody : IDisposable
         timer.Start();
     }
 
-    //public List<string> GetRealPath(IList<string> filePathes)
-    //{
-    //    var list = new List<string>();
-
-    //    filePathes.ToList().ForEach(x =>
-    //    {
-    //        var dic = Path.GetDirectoryName(x);
-    //        var filen = Path.GetFileName(x);
-    //        if (filen.Contains("*"))
-    //        {
-    //            var files = Directory.GetFiles(dic, filen, SearchOption.AllDirectories);
-    //            list.AddRange(files);
-    //        }
-    //        else
-    //        {
-    //            list.Add(x);
-    //        }
-
-    //    });
-
-
-    //    return list;
-    //}
-
-
     /// <summary>
     ///     转换多个文件成一个文件
     /// </summary>
@@ -199,8 +174,6 @@ public class MainBody : IDisposable
         timer.Start();
         ExportContents = new List<string>();
         isImportProgress = true;
-
-        //filePathes = GetRealPath(filePathes);
 
         foreach (var file in filePathes)
         {
@@ -251,18 +224,6 @@ public class MainBody : IDisposable
         Count = allWlList.Count;
 
         ReplaceAfterCode(allWlList);
-        //Sort
-        //var wlDict = new Dictionary<string, WordLibrary>();
-        //var sorted = allWlList.Distinct().OrderBy(w => w.PinYinString).ToList();
-        //allWlList = new WordLibraryList();
-        //foreach (var wl in sorted)
-        //{
-        //    if (!wlDict.ContainsKey(wl.Word))
-        //    {
-        //        wlDict.Add(wl.Word, wl);
-        //        allWlList.Add(wl);
-        //    }
-        //}
         ExportContents = Export.Export(allWlList);
 
         timer.Stop();
@@ -711,7 +672,6 @@ public class MainBody : IDisposable
         ExportContents = new List<string>();
         var c = 0;
 
-        //filePathes = GetRealPath(filePathes);
         var fileCount = filePathes.Count;
         var fileProcessed = 0;
         foreach (var file in filePathes)

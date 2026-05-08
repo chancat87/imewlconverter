@@ -102,12 +102,6 @@ public class ParsePattern
 
     #region 生成指定格式的字符串
 
-    //public string BuildWlString(string word)
-    //{
-    //    //WordLibrary wl=new WordLibrary(){Word = word};
-    //    return BuildWlString(word,null,1);
-
-    //}
     /// <summary>
     ///     只有单词的情况下，根据规则生成目标格式的编码
     /// </summary>
@@ -147,10 +141,6 @@ public class ParsePattern
     {
         var cp = "";
         if (!ContainCode) code = "";
-        //else if(string.IsNullOrEmpty(code))//没有Code就生成Code
-        //{
-        //    GenerateCode(word)
-        //}
         var sb = new StringBuilder();
         if (ContainRank) cp = rank.ToString();
         var dic = new Dictionary<int, string>();
@@ -168,101 +158,4 @@ public class ParsePattern
     }
 
     #endregion
-
-    //#region Example
-
-    ///// <summary>
-    ///// 按照指定规则，生成一个示例
-    ///// </summary>
-    ///// <returns></returns>
-    //public string BuildWLStringSample()
-    //{
-
-    //    IDictionary<char, string> dic = new Dictionary<char, string>()
-    //        {
-    //            {'深', "shen"},
-    //            {'蓝', "lan"},
-    //            {'词', "ci"},
-    //            {'库', "ku"},
-    //            {'转', "zhuan"},
-    //            {'换', "huan"}
-    //        };
-    //   if (!IsPinyin)
-    //   {
-    //       if (!string.IsNullOrEmpty(MappingTablePath))
-    //       {
-    //           dic = UserCodingHelper.GetCodingDict(MappingTablePath);
-    //       }
-    //   }
-    //    string word = "";
-    //    string result = "";
-
-    //    foreach (var c in sample.Word)
-    //    {
-    //        word += c;
-
-    //        result += BuildWlString(dic,1234,word) + "\r\n";
-    //    }
-
-    //    return result;
-    //}
-    ///// <summary>
-    ///// 传入一个字与码的集合，以及词频，根据用户设定的格式，生成一条词条字符串
-    ///// </summary>
-    ///// <param name="charCodes"></param>
-    ///// <param name="rank"></param>
-    ///// <returns></returns>
-    //private string BuildWlString(IDictionary<char, string> charCodes, int rank, string word = "")
-    //{
-    //    string code = "";
-    //    if (word == "")
-    //    {
-    //        foreach (var c in charCodes.Keys)
-    //        {
-    //            word += c;
-    //        }
-    //    }
-    //    if (ContainCode)
-    //    {
-    //        if (IsPinyinFormat)
-    //        {
-    //            code = CollectionHelper.GetString(GetSelectWordCodes(word, charCodes), CodeSplitString, CodeSplitType);
-    //        }
-    //        else//多字一码，根据用户设置的编码规则，生成编码
-    //        {
-    //            selfFactory.MutiWordCodeFormat = MutiWordCodeFormat;
-    //            selfFactory.MappingDictionary = charCodes;
-
-    //            code = selfFactory.GetCodeOfString(word)[0];
-    //        }
-    //    }
-    //    return BuildWlString(word, code, rank);
-
-    //}
-    //#endregion
-
-    //public void CodingString(WordLibrary wl, IWordCodeGenerater factory)
-    //{
-    //    var codes = new List<string>();
-    //    foreach (char c in wl.Word)
-    //    {
-    //        string code = factory.GetDefaultCodeOfChar(c);
-    //        codes.Add(code);
-    //    }
-    //    wl.PinYin = codes.ToArray();
-    //}
-
-    //private IEnumerable<string> GetSelectWordCodes(string word, IDictionary<char, string> charCodes)
-    //{
-    //    if (word == "")
-    //    {
-    //        return charCodes.Values;
-    //    }
-    //    var result = new List<string>();
-    //    foreach (var c in word)
-    //    {
-    //        result.Add(charCodes[c]);
-    //    }
-    //    return result;
-    //}
 }

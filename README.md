@@ -216,7 +216,7 @@ dotnet run --project src/ImeWlConverterCmd -- \
 
 ### 重要说明
 
-从 v3.0.0 开始，命令行参数格式已更新为 GNU 风格。如果您使用的是旧格式（如 `-i:scel`），请参阅 [MIGRATION.md](MIGRATION.md) 进行迁移。
+从 v3.0.0 开始，命令行参数格式已更新为 GNU 风格。如果您使用的是旧格式（如 `-i:scel`），请参阅 [MIGRATION.md](docs/MIGRATION.md) 进行迁移。
 
 ## 集成测试
 
