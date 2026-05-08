@@ -269,8 +269,8 @@ CMD="imewlconverter -i $INPUT_FORMAT -o $OUTPUT_FORMAT -O $OUTPUT_PATH"
 
 ## 📚 其他资源
 
-- [README.md](README.md) - 完整使用文档
-- [CLAUDE.md](CLAUDE.md) - 开发者指南
+- [README.md](../README.md) - 完整使用文档
+- [CODEBUDDY.md](../CODEBUDDY.md) - 开发者指南
 - 运行 `imewlconverter --help` 查看完整帮助
 
 ## 🆘 需要帮助？

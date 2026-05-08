@@ -60,8 +60,8 @@ src/ImeWlConverterMac/
 
 ## 技术栈
 
-- **UI框架**: Avalonia UI 11.0.10
-- **目标框架**: .NET 8.0
+- **UI框架**: Avalonia UI 11.2.3
+- **目标框架**: .NET 10.0
 - **架构模式**: MVVM (Model-View-ViewModel)
 - **核心库**: ImeWlConverterCore (原项目核心逻辑)
 - **平台支持**: macOS (Intel + Apple Silicon)
@@ -165,8 +165,8 @@ dotnet run
 
 ### 开发环境要求
 - macOS 10.15+ (Catalina或更高版本)
-- .NET 8.0 SDK
-- 可选：Visual Studio for Mac 或 JetBrains Rider
+- .NET 10.0 SDK
+- 可选：JetBrains Rider
 
 ### 构建命令
 ```bash

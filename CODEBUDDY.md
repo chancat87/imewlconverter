@@ -192,7 +192,7 @@ src/
   dotnet build
   ```
 
-详见 [RELEASING.md](RELEASING.md) 了解完整的发布流程。
+详见 [RELEASING.md](docs/RELEASING.md) 了解完整的发布流程。
 
 ### 字符编码
 

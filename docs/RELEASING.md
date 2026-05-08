@@ -222,7 +222,7 @@ git describe --tags --long
 **症状**：GitHub Actions 构建失败，提示找不到版本号
 
 **解决方法**：
-1. 检查 `.github/workflows/release.yml` 和 `commit.yml`
+1. 检查 `.github/workflows/release.yml` 和 `ci.yml`
 2. 确认 `actions/checkout@v4` 使用了 `fetch-depth: 0`
 3. 查看 CI 日志中的 MinVer 输出
 
