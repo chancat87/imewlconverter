@@ -10,10 +10,6 @@ using ImeWlConverter.Formats.Shared;
 [FormatPlugin("ggpy", "谷歌拼音", 110)]
 public sealed partial class GooglePinyinImporter : TextFormatImporter
 {
-    static GooglePinyinImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
 
     protected override Encoding FileEncoding => Encoding.GetEncoding("GBK");
     protected override IEnumerable<WordEntry> ParseLine(string line)

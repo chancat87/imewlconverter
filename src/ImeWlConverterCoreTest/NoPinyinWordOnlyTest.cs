@@ -15,7 +15,6 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Text;
 using Xunit;
 using Studyzy.IMEWLConverter.IME;
 
@@ -27,7 +26,6 @@ public class NoPinyinWordOnlyTest : BaseTest
     {
         importer = new NoPinyinWordOnly();
         exporter = new NoPinyinWordOnly();
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
     protected override string StringData => Resource4Test.NoPinyinWordOnly;

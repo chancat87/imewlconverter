@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.Win10Ms;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("win10mspy", "Win10微软拼音", 130)]
 public sealed partial class Win10MsPinyinImporter : BinaryFormatImporter
 {
-    static Win10MsPinyinImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

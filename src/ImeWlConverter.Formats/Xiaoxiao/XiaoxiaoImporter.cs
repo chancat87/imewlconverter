@@ -12,12 +12,6 @@ using ImeWlConverter.Formats.Shared;
 public sealed partial class XiaoxiaoImporter : TextFormatImporter
 {
     private static readonly Regex ContentRegex = new(@"[^\s#]+( [\u4E00-\u9FA5]+)+");
-
-    static XiaoxiaoImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
-
     protected override Encoding FileEncoding
     {
         get

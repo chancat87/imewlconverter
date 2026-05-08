@@ -34,7 +34,6 @@ public class XiaoxiaoErbi : BaseImport, IWordLibraryExport
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GB18030");

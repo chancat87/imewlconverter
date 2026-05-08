@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.SougouBin;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("sgpybin", "搜狗拼音bin", 30)]
 public sealed partial class SougouBinImporter : BinaryFormatImporter
 {
-    static SougouBinImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

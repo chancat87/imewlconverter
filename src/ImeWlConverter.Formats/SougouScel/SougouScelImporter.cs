@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.SougouScel;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("scel", "搜狗细胞词库scel", 20)]
 public sealed partial class SougouScelImporter : BinaryFormatImporter
 {
-    static SougouScelImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

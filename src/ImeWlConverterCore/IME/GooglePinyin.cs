@@ -75,7 +75,6 @@ public class GooglePinyin : BaseTextImport, IWordLibraryExport, IWordLibraryText
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GBK");

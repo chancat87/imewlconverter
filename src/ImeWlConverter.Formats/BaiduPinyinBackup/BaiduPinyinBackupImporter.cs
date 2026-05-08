@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.BaiduPinyinBackup;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("bdpybin", "百度拼音备份", 20)]
 public sealed partial class BaiduPinyinBackupImporter : BinaryFormatImporter
 {
-    static BaiduPinyinBackupImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

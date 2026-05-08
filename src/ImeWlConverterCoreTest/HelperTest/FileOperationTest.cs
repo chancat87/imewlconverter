@@ -26,6 +26,11 @@ namespace Studyzy.IMEWLConverter.Test.HelperTest;
 
 public class FileOperationTest
 {
+    public FileOperationTest()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     [Theory]
     [InlineData("Test/u8nobomzy.txt", "UTF-8")]
     [InlineData("Test/luna_pinyin_export.txt", "UTF-8")]
@@ -34,7 +39,6 @@ public class FileOperationTest
     public void TestGetFileEncoding(string path, string encoding)
     {
         path = GetFullPath(path);
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         var e = FileOperationHelper.GetEncodingType(path);
         Assert.Equal(Encoding.GetEncoding(encoding).EncodingName, e.EncodingName);
         var txt = FileOperationHelper.ReadFile(path);
@@ -44,7 +48,6 @@ public class FileOperationTest
     public void TestCodePagesEncodingProviderRequired()
     {
         // After registration, GB2312 encoding should be available
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         Assert.Equal("Chinese Simplified (GB2312)", Encoding.GetEncoding("GB2312").EncodingName);
     }
 

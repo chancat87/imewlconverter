@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.QQPinyinQcel;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("qcel", "QQ拼音qcel", 60)]
 public sealed partial class QQPinyinQcelImporter : BinaryFormatImporter
 {
-    static QQPinyinQcelImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

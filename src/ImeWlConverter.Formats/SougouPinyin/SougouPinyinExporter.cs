@@ -9,10 +9,6 @@ using ImeWlConverter.Formats.Shared;
 [FormatPlugin("sgpy", "搜狗拼音", 10)]
 public sealed partial class SougouPinyinExporter : TextFormatExporter
 {
-    static SougouPinyinExporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
 
     protected override Encoding FileEncoding => Encoding.GetEncoding("GBK");
     protected override string? FormatEntry(WordEntry entry)

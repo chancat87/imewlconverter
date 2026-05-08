@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.SougouPinyinDict;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -15,10 +14,6 @@ using ImeWlConverter.Formats.Shared;
 [FormatPlugin("sgpydict", "搜狗拼音备份词典", 30)]
 public sealed partial class SougouPinyinDictImporter : BinaryFormatImporter
 {
-    static SougouPinyinDictImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         // SougouPinyinDict is a helper class for the bin format.

@@ -31,7 +31,6 @@ public class SinaPinyin : BaseTextImport, IWordLibraryTextImport, IWordLibraryEx
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GBK");

@@ -35,7 +35,6 @@ public class CangjiePlatform : BaseTextImport, IWordLibraryExport, IWordLibraryT
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GBK");

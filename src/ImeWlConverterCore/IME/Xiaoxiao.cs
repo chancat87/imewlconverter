@@ -120,7 +120,6 @@ public class Xiaoxiao
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GB18030");

@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.JidianMBDict;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("jdmb", "极点码表", 190)]
 public sealed partial class JidianMBDictImporter : BinaryFormatImporter
 {
-    static JidianMBDictImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

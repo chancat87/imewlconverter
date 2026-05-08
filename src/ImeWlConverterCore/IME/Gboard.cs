@@ -173,7 +173,6 @@ public class Gboard : BaseImport, IWordLibraryExport, IWordLibraryImport
     {
         get
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             try
             {
                 return Encoding.GetEncoding("GBK");

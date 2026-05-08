@@ -43,7 +43,6 @@ public class SystemKernel : IChineseConverter
 
     public string ToChs(string cht)
     {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         var gb2312 = Encoding.GetEncoding(936);
         var src = gb2312.GetBytes(cht);
         var dest = new byte[src.Length];

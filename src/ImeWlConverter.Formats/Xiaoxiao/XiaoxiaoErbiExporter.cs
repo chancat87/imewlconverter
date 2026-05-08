@@ -11,10 +11,6 @@ using ImeWlConverter.Abstractions.Results;
 [FormatPlugin("erbi", "二笔", 100)]
 public sealed partial class XiaoxiaoErbiExporter : IFormatExporter
 {
-    static XiaoxiaoErbiExporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     public Task<ExportResult> ExportAsync(
         IReadOnlyList<WordEntry> entries, Stream output,
         ExportOptions? options = null, CancellationToken ct = default)

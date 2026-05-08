@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.LingoesLd2;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("ld2", "灵格斯ld2", 200)]
 public sealed partial class LingoesLd2Importer : BinaryFormatImporter
 {
-    static LingoesLd2Importer()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

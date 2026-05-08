@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.QQPinyinQpyd;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("qpyd", "QQ拼音qpyd", 60)]
 public sealed partial class QQPinyinQpydImporter : BinaryFormatImporter
 {
-    static QQPinyinQpydImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();

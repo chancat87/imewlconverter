@@ -1,6 +1,5 @@
 namespace ImeWlConverter.Formats.BaiduBcd;
 
-using System.Text;
 using ImeWlConverter.Abstractions;
 using ImeWlConverter.Abstractions.Enums;
 using ImeWlConverter.Abstractions.Models;
@@ -11,10 +10,6 @@ using Studyzy.IMEWLConverter.IME;
 [FormatPlugin("bcd", "百度手机bcd", 1020)]
 public sealed partial class BaiduBcdImporter : BinaryFormatImporter
 {
-    static BaiduBcdImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     protected override IReadOnlyList<WordEntry> ParseBinary(Stream input, CancellationToken ct)
     {
         var tempFile = Path.GetTempFileName();
