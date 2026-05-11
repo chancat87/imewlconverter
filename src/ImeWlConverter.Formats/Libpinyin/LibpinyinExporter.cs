@@ -14,6 +14,9 @@ public sealed partial class LibpinyinExporter : TextFormatExporter
     protected override string LineEnding => "\n";
     protected override string? FormatEntry(WordEntry entry)
     {
+        // Libpinyin format excludes single-character entries
+        if (entry.Word.Length < 2)
+            return null;
         var pinyin = entry.Code?.GetPrimaryCode("'") ?? "";
         if (string.IsNullOrEmpty(pinyin))
             return null;

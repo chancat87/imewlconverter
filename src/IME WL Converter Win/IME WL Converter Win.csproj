@@ -6,6 +6,7 @@
         <RootNamespace>Studyzy.IMEWLConverter</RootNamespace>
         <AssemblyName>深蓝词库转换</AssemblyName>
         <ApplicationIcon>app.ico</ApplicationIcon>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
         
         <!-- 禁用Windows SDK引用 -->
         <EnableWindowsTargeting>false</EnableWindowsTargeting>
@@ -130,7 +131,7 @@ GitHub: https://github.com/studyzy/imewlconverter</Description>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1004" />
-        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
     </ItemGroup>
     <ItemGroup>
         <Compile Update="EncodingComboBox.cs">
@@ -142,8 +143,9 @@ GitHub: https://github.com/studyzy/imewlconverter</Description>
         <Content Include="ThirdPart\Microsoft.Office.Interop.Word.dll"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\ImeWlConverterCore\ImeWlConverterCore.csproj"/>
-        <ProjectReference Include="..\ImeWlConverterCmd\ImeWlConverterCmd.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Abstractions\ImeWlConverter.Abstractions.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Core\ImeWlConverter.Core.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Formats\ImeWlConverter.Formats.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Remove="Forms\CreatePinyinWLForm.cs"/>

@@ -1,8 +1,45 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Studyzy.IMEWLConverter.Entities;
 
 namespace ImeWlConverterMac.Views;
+
+/// <summary>
+/// GUI 过滤配置数据类（暂存 UI 状态，后续接入新管道的 FilterPipeline）
+/// </summary>
+public class FilterConfig
+{
+    public int WordLengthFrom { get; set; } = 1;
+    public int WordLengthTo { get; set; } = 9999;
+    public int WordRankFrom { get; set; } = 1;
+    public int WordRankTo { get; set; } = 999999;
+    public int WordRankPercentage { get; set; } = 100;
+
+    public bool IgnoreEnglish { get; set; }
+    public bool IgnoreSpace { get; set; }
+    public bool IgnorePunctuation { get; set; }
+    public bool IgnoreNumber { get; set; }
+    public bool IgnoreNoAlphabetCode { get; set; }
+    public bool NoFilter { get; set; } = true;
+    public bool IgnoreFirstCJK { get; set; }
+
+    public bool ReplaceEnglish { get; set; }
+    public bool ReplaceNumber { get; set; }
+    public bool ReplacePunctuation { get; set; }
+    public bool ReplaceSpace { get; set; }
+
+    public bool KeepEnglish { get; set; }
+    public bool KeepNumber { get; set; }
+    public bool KeepPunctuation { get; set; }
+    public bool KeepSpace { get; set; }
+    public bool KeepEnglish_ { get; set; }
+    public bool KeepNumber_ { get; set; }
+    public bool KeepPunctuation_ { get; set; }
+    public bool KeepSpace_ { get; set; }
+
+    public bool FullWidth { get; set; }
+    public bool ChsNumber { get; set; }
+    public bool PrefixEnglish { get; set; }
+}
 
 public partial class FilterConfigWindow : Window
 {

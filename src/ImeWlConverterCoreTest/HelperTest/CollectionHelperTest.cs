@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using Studyzy.IMEWLConverter.Helpers;
+using ImeWlConverter.Core.Helpers;
 
 namespace Studyzy.IMEWLConverter.Test.HelperTest;
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@
  */
 
 using Xunit;
-using Studyzy.IMEWLConverter.Entities;
-using Studyzy.IMEWLConverter.Filters;
+using ImeWlConverter.Abstractions.Models;
+using ImeWlConverter.Core.Filters;
 
 namespace Studyzy.IMEWLConverter.Test.FilterTest;
 
@@ -31,10 +31,9 @@ public class AllFilterTest
     [InlineData("3转换成功。", false)]
     public void ChinesePunctuationFilterTest(string word, bool isKeep)
     {
-        var wl = new WordLibrary();
-        wl.Word = word;
+        var entry = new WordEntry { Word = word };
         var filter = new ChinesePunctuationFilter();
-        Assert.Equal(isKeep, filter.IsKeep(wl));
+        Assert.Equal(isKeep, filter.ShouldKeep(entry));
     }
 
     [Theory]
@@ -44,9 +43,8 @@ public class AllFilterTest
     [InlineData("深蓝 ", false)]
     public void SpaceFilterTest(string word, bool isKeep)
     {
-        var wl = new WordLibrary();
-        wl.Word = word;
+        var entry = new WordEntry { Word = word };
         var filter = new SpaceFilter();
-        Assert.Equal(isKeep, filter.IsKeep(wl));
+        Assert.Equal(isKeep, filter.ShouldKeep(entry));
     }
 }

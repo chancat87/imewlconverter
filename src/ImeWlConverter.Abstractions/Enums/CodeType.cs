@@ -59,13 +59,13 @@ public enum CodeType
     /// <summary>Shuangpin (双拼) encoding.</summary>
     Shuangpin,
 
-    /// <summary>Yong (永码) encoding.</summary>
+    /// <summary>Yong encoding (永码).</summary>
     Yong,
 
-    /// <summary>Internal code encoding.</summary>
+    /// <summary>Internal code (内码).</summary>
     InnerCode,
 
-    /// <summary>User-defined phrase encoding.</summary>
+    /// <summary>User-defined phrase (用户自定义短语).</summary>
     UserDefinePhrase,
 
     /// <summary>Unknown encoding type.</summary>

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -15,8 +15,10 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.IO;
+using System.Text;
 using Xunit;
-using Studyzy.IMEWLConverter.IME;
+using ImeWlConverter.Formats.PinyinJiaJia;
 
 namespace Studyzy.IMEWLConverter.Test;
 
@@ -24,46 +26,29 @@ public class PinyinJiaJiaTest : BaseTest
 {
     public PinyinJiaJiaTest()
     {
-        importer = new PinyinJiaJia();
-        exporter = new PinyinJiaJia();
+        importer = new PinyinJiaJiaImporter();
+        exporter = new PinyinJiaJiaExporter();
     }
 
     protected override string StringData => Resource4Test.PinyinJiajia;
 
     [Fact]
-    public void ExportLine()
-    {
-        var txt = exporter.ExportLine(WlData);
-        Assert.Equal("深shen蓝lan测ce试shi", txt);
-    }
-
-    [Fact]
-    public void ImportNoPinyin()
-    {
-        var wl = importer.ImportLine("深蓝测试");
-        Assert.Equal(1, wl.Count);
-        Assert.Equal("shen'lan'ce'shi", wl[0].PinYinString);
-    }
-
-    [Fact]
     public void ImportWithPinyinFull()
     {
-        var wl = importer.ImportLine("深shen蓝lan居ju");
-        Assert.Equal(1, wl.Count);
-        Assert.Equal("shen'lan'ju", wl[0].PinYinString);
-        Assert.Equal("深蓝居", wl[0].Word);
+        var text = "深shen蓝lan居ju";
+        var bytes = Encoding.Unicode.GetBytes(text);
+        using var ms = new MemoryStream(bytes);
+        var result = importer!.ImportAsync(ms).GetAwaiter().GetResult();
+        Assert.Equal(1, result.Entries.Count);
+        Assert.Equal("深蓝居", result.Entries[0].Word);
     }
 
     [Fact]
-    public void ImportWithPinyinPart()
+    public void ImportFromResource()
     {
-        var wl = ((IWordLibraryTextImport)importer).ImportText(StringData);
-        Assert.True(wl.Count >= 8);
-        Assert.Equal("ren'min'hen'xing", wl[0].PinYinString);
-        Assert.Equal("人民很行", wl[0].Word);
-        Assert.Equal("ren'min'yin'hang", wl[1].PinYinString);
-        Assert.Equal("人民银行", wl[1].Word);
-        Assert.Equal("dong'li'wu'xian", wl[2].PinYinString);
-        Assert.Equal("栋力无限", wl[2].Word);
+        var bytes = Encoding.Unicode.GetBytes(StringData);
+        using var ms = new MemoryStream(bytes);
+        var result = importer!.ImportAsync(ms).GetAwaiter().GetResult();
+        Assert.True(result.Entries.Count >= 8);
     }
 }

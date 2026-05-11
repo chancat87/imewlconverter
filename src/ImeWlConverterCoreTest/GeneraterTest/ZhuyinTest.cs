@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -15,19 +15,19 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Linq;
 using Xunit;
-using Studyzy.IMEWLConverter.Generaters;
+using ImeWlConverter.Abstractions.Contracts;
+using ImeWlConverter.Core.CodeGeneration.Generators;
 
 namespace Studyzy.IMEWLConverter.Test.GeneraterTest;
 
 public class ZhuyinTest
 {
-    private readonly IWordCodeGenerater generater;
+    private readonly ICodeGenerator generator;
 
     public ZhuyinTest()
     {
-        generater = new ZhuyinGenerater();
+        generator = new ZhuyinCodeGenerator();
     }
 
     [Fact]
@@ -42,7 +42,8 @@ public class ZhuyinTest
     [InlineData("故乡", "ㄍㄨˋ,ㄒㄧㄤ")]
     public void TestGetLongWordsPinyin(string str, string py)
     {
-        var result = generater.GetCodeOfString(str).ToCodeString(",");
-        Assert.Contains(py, result.ToArray());
+        var result = generator.GenerateCode(str);
+        var primaryCode = result.GetPrimaryCode(",");
+        Assert.Equal(py, primaryCode);
     }
 }

@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 
 using System;
 using Xunit;
-using Studyzy.IMEWLConverter.IME;
+using ImeWlConverter.Formats.SougouPinyin;
 
 namespace Studyzy.IMEWLConverter.Test;
 
@@ -25,8 +25,8 @@ public class SougouPinyinTest : BaseTest
 {
     public SougouPinyinTest()
     {
-        importer = new SougouPinyin();
-        exporter = new SougouPinyin();
+        importer = new SougouPinyinImporter();
+        exporter = new SougouPinyinExporter();
     }
 
     protected override string StringData => throw new NotImplementedException();

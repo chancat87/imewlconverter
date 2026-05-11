@@ -88,6 +88,8 @@
         <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\ImeWlConverterCore\ImeWlConverterCore.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Formats\ImeWlConverter.Formats.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Core\ImeWlConverter.Core.csproj"/>
+        <ProjectReference Include="..\ImeWlConverter.Abstractions\ImeWlConverter.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

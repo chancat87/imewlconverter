@@ -10,10 +10,6 @@ using ImeWlConverter.Formats.Shared;
 [FormatPlugin("cjpt", "仓颉平台", 230)]
 public sealed partial class CangjiePlatformImporter : TextFormatImporter
 {
-    static CangjiePlatformImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
 
     protected override Encoding FileEncoding => Encoding.GetEncoding("GBK");
     protected override IEnumerable<WordEntry> ParseLine(string line)

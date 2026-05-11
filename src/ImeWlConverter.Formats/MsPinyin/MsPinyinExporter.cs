@@ -6,8 +6,9 @@ using ImeWlConverter.Abstractions.Contracts;
 using ImeWlConverter.Abstractions.Models;
 using ImeWlConverter.Abstractions.Options;
 using ImeWlConverter.Abstractions.Results;
+using ImeWlConverter.Core.Helpers;
 
-/// <summary>Microsoft Pinyin dictionary exporter (XML format).</summary>
+/// <summary>Microsoft Pinyin dictionary exporter (XML format with tone-marked pinyin).</summary>
 [FormatPlugin("mspy", "微软拼音", 135)]
 public sealed partial class MsPinyinExporter : IFormatExporter
 {
@@ -16,7 +17,9 @@ public sealed partial class MsPinyinExporter : IFormatExporter
         IReadOnlyList<WordEntry> entries, Stream output,
         ExportOptions? options = null, CancellationToken ct = default)
     {
-        using var writer = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
+        // UTF-8 with BOM
+        var utf8Bom = new UTF8Encoding(true);
+        using var writer = new StreamWriter(output, utf8Bom, leaveOpen: true);
         var count = 0;
         var errorCount = 0;
 
@@ -60,7 +63,7 @@ public sealed partial class MsPinyinExporter : IFormatExporter
             ct.ThrowIfCancellationRequested();
             try
             {
-                var pinyin = entry.Code?.GetPrimaryCode(" ") ?? "";
+                var pinyin = GetTonePinyin(entry);
                 writer.Write("<ns1:DictionaryEntry>\r\n");
                 writer.Write($"<ns1:InputString>{pinyin}</ns1:InputString>\r\n");
                 writer.Write($"<ns1:OutputString>{entry.Word}</ns1:OutputString>\r\n");
@@ -82,5 +85,32 @@ public sealed partial class MsPinyinExporter : IFormatExporter
             EntryCount = count,
             ErrorCount = errorCount
         });
+    }
+
+    private static string GetTonePinyin(WordEntry entry)
+    {
+        if (entry.Code is null || entry.Code.Segments.Count == 0)
+            return "";
+
+        var word = entry.Word;
+        var segments = entry.Code.Segments;
+        var result = new List<string>();
+
+        for (var i = 0; i < segments.Count; i++)
+        {
+            var py = segments[i][0];
+            if (i < word.Length)
+            {
+                // Add tone number based on character
+                var tonePy = PinyinHelper.AddToneToPinyin(word[i], py);
+                result.Add(tonePy);
+            }
+            else
+            {
+                result.Add(py + "1");
+            }
+        }
+
+        return string.Join(" ", result);
     }
 }

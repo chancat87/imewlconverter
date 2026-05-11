@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -17,17 +17,18 @@
 
 using System.Linq;
 using Xunit;
-using Studyzy.IMEWLConverter.Generaters;
+using ImeWlConverter.Abstractions.Contracts;
+using ImeWlConverter.Core.CodeGeneration.Generators;
 
 namespace Studyzy.IMEWLConverter.Test.GeneraterTest;
 
 public class PinyinTest
 {
-    private readonly IWordCodeGenerater generater;
+    private readonly ICodeGenerator generator;
 
     public PinyinTest()
     {
-        generater = new PinyinGenerater();
+        generator = new PinyinCodeGenerator();
     }
 
     [Fact]
@@ -44,7 +45,8 @@ public class PinyinTest
     [InlineData("〇〇七", "ling ling qi")]
     public void TestGetLongWordsPinyin(string str, string py)
     {
-        var result = generater.GetCodeOfString(str);
-        Assert.Contains(py, result.ToCodeString(" ").ToArray());
+        var result = generator.GenerateCode(str);
+        var primaryCode = result.GetPrimaryCode(" ");
+        Assert.Equal(py, primaryCode);
     }
 }

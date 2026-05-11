@@ -10,10 +10,6 @@ using ImeWlConverter.Formats.Shared;
 [FormatPlugin("xlpy", "新浪拼音", 180)]
 public sealed partial class SinaPinyinImporter : TextFormatImporter
 {
-    static SinaPinyinImporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
 
     protected override Encoding FileEncoding => Encoding.GetEncoding("GBK");
     protected override IEnumerable<WordEntry> ParseLine(string line)

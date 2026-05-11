@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -15,19 +15,20 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
+using System.Linq;
 using Xunit;
-using Studyzy.IMEWLConverter.Generaters;
+using ImeWlConverter.Abstractions.Contracts;
+using ImeWlConverter.Core.CodeGeneration.Generators;
 
 namespace Studyzy.IMEWLConverter.Test.GeneraterTest;
 
 public class ErbiTest
 {
-    private readonly IWordCodeGenerater generater;
+    private readonly ICodeGenerator generator;
 
     public ErbiTest()
     {
-        generater = new QingsongErbiGenerater();
+        generator = new QingsongErbiCodeGenerator();
     }
 
     [Theory]
@@ -35,30 +36,15 @@ public class ErbiTest
     [InlineData("中华人民共和国", "zhrg")]
     public void TestOneWord(string c, string code)
     {
-        var codes = generater.GetCodeOfString(c);
-        foreach (var code1 in codes)
-        {
-            if (code == code1[0])
-            {
-                return;
-            }
-        }
-
-        Assert.Fail("not matched code," + c);
+        var result = generator.GenerateCode(c);
+        // Erbi is one-word-one-code, all variants are in segment[0]
+        Assert.True(result.Segments.Count > 0);
+        Assert.Contains(code, result.Segments[0]);
     }
 
     [Fact(Skip = "Large dataset test, run manually")]
     [Trait("Category", "Explicit")]
     public void BatchTest()
     {
-    }
-
-    private bool IsContain(IList<string> str, string code)
-    {
-        foreach (var s in str)
-            if (s == code)
-                return true;
-
-        return false;
     }
 }

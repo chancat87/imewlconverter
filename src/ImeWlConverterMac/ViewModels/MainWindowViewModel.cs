@@ -9,21 +9,20 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using Studyzy.IMEWLConverter;
-using Studyzy.IMEWLConverter.Entities;
-using Studyzy.IMEWLConverter.Filters;
-using Studyzy.IMEWLConverter.Generaters;
-using Studyzy.IMEWLConverter.Helpers;
-using Studyzy.IMEWLConverter.IME;
-using Studyzy.IMEWLConverter.Language;
-using GuiFormatRegistrar = ImeWlConverterMac.Adapters.FormatRegistrar;
+using ImeWlConverter.Abstractions.Contracts;
+using ImeWlConverter.Abstractions.Models;
+using ImeWlConverter.Abstractions.Options;
+using ImeWlConverter.Core;
+using ImeWlConverter.Core.Pipeline;
+using ImeWlConverter.Formats;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ImeWlConverterMac.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-    private readonly IDictionary<string, IWordLibraryExport> _exports = new Dictionary<string, IWordLibraryExport>();
-    private readonly IDictionary<string, IWordLibraryImport> _imports = new Dictionary<string, IWordLibraryImport>();
+    private readonly IDictionary<string, IFormatImporter> _importers = new Dictionary<string, IFormatImporter>();
+    private readonly IDictionary<string, IFormatExporter> _exporters = new Dictionary<string, IFormatExporter>();
 
     private string _filePath = "";
     private string _resultText = "";
@@ -35,13 +34,11 @@ public class MainWindowViewModel : ViewModelBase
     private bool _streamExport = false;
     private bool _mergeToOneFile = true;
 
-    private IWordLibraryImport? _import;
-    private IWordLibraryExport? _export;
-    private MainBody? _mainBody;
-    private FilterConfig _filterConfig = new();
-    private IWordRankGenerater _wordRankGenerater = new DefaultWordRankGenerater();
-    private ChineseTranslate _translate = ChineseTranslate.NotTrans;
-    private IChineseConverter? _chineseConverter;
+    private IFormatImporter? _selectedImporter;
+    private IFormatExporter? _selectedExporter;
+    private ChineseConversionMode _chineseConversion = ChineseConversionMode.None;
+    private ServiceProvider? _serviceProvider;
+    private string? _lastTempFile;
 
     public MainWindowViewModel()
     {
@@ -148,7 +145,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 if (value != null)
                 {
-                    _import = GetImportInterface(value);
+                    _selectedImporter = _importers.TryGetValue(value, out var imp) ? imp : null;
                 }
                 RaiseCanExecuteChanged();
             }
@@ -165,7 +162,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 if (value != null)
                 {
-                    _export = GetExportInterface(value);
+                    _selectedExporter = _exporters.TryGetValue(value, out var exp) ? exp : null;
                 }
                 RaiseCanExecuteChanged();
             }
@@ -200,35 +197,27 @@ public class MainWindowViewModel : ViewModelBase
 
     private void LoadImeList()
     {
-        var (imports, exports, sortedImportNames, sortedExportNames) = GuiFormatRegistrar.RegisterAllForGui();
+        var services = new ServiceCollection();
+        services.AddAllFormats();
+        services.AddImeWlConverterCore();
+        _serviceProvider = services.BuildServiceProvider();
 
-        foreach (var kvp in imports)
-            _imports.Add(kvp.Key, kvp.Value);
+        var importers = _serviceProvider.GetServices<IFormatImporter>()
+            .OrderBy(i => i.Metadata.SortOrder).ToList();
+        var exporters = _serviceProvider.GetServices<IFormatExporter>()
+            .OrderBy(e => e.Metadata.SortOrder).ToList();
 
-        foreach (var kvp in exports)
-            _exports.Add(kvp.Key, kvp.Value);
+        foreach (var imp in importers)
+            _importers[imp.Metadata.DisplayName] = imp;
+        foreach (var exp in exporters)
+            _exporters[exp.Metadata.DisplayName] = exp;
 
         ImportTypes.Clear();
-        foreach (var name in sortedImportNames)
-            ImportTypes.Add(name);
-
+        foreach (var imp in importers)
+            ImportTypes.Add(imp.Metadata.DisplayName);
         ExportTypes.Clear();
-        foreach (var name in sortedExportNames)
-            ExportTypes.Add(name);
-    }
-
-    private IWordLibraryImport GetImportInterface(string name)
-    {
-        if (_imports.TryGetValue(name, out var import))
-            return import;
-        throw new ArgumentException("导入词库的输入法错误");
-    }
-
-    private IWordLibraryExport GetExportInterface(string name)
-    {
-        if (_exports.TryGetValue(name, out var export))
-            return export;
-        throw new ArgumentException("导出词库的输入法错误");
+        foreach (var exp in exporters)
+            ExportTypes.Add(exp.Metadata.DisplayName);
     }
 
     private async Task OpenFileAsync()
@@ -254,10 +243,10 @@ public class MainWindowViewModel : ViewModelBase
                     var filePaths = files.Select(f => f.Path.LocalPath).ToArray();
                     FilePath = string.Join(" | ", filePaths);
 
-                    if (filePaths.Length == 1 && SelectedImportType != ConstantString.SELF_DEFINING)
+                    if (filePaths.Length == 1)
                     {
-                        var autoType = FileOperationHelper.AutoMatchSourceWLType(filePaths[0]);
-                        if (ImportTypes.Contains(autoType))
+                        var autoType = AutoMatchImportType(filePaths[0]);
+                        if (autoType != null && ImportTypes.Contains(autoType))
                             SelectedImportType = autoType;
                     }
                 }
@@ -273,17 +262,41 @@ public class MainWindowViewModel : ViewModelBase
     {
         FilePath = string.Join(" | ", filePaths);
 
-        if (filePaths.Length == 1 && SelectedImportType != ConstantString.SELF_DEFINING)
+        if (filePaths.Length == 1)
         {
-            var autoType = FileOperationHelper.AutoMatchSourceWLType(filePaths[0]);
-            if (ImportTypes.Contains(autoType))
+            var autoType = AutoMatchImportType(filePaths[0]);
+            if (autoType != null && ImportTypes.Contains(autoType))
                 SelectedImportType = autoType;
         }
     }
 
+    private string? AutoMatchImportType(string filePath)
+    {
+        var ext = Path.GetExtension(filePath)?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) return null;
+
+        // 按文件扩展名匹配导入格式
+        foreach (var kvp in _importers)
+        {
+            var id = kvp.Value.Metadata.Id.ToLowerInvariant();
+            // 常见扩展名映射
+            if (ext == ".scel" && id == "scel") return kvp.Key;
+            if (ext == ".qcel" && id == "qcel") return kvp.Key;
+            if (ext == ".qpyd" && id == "qpyd") return kvp.Key;
+            if (ext == ".bcd" && id == "baiduBcd") return kvp.Key;
+            if (ext == ".bdict" && id == "baiduBdict") return kvp.Key;
+            if (ext == ".ld2" && id == "lingoesLd2") return kvp.Key;
+            if (ext == ".uwl" && id == "ziguangUwl") return kvp.Key;
+            if (ext == ".bin" && id == "sougouBin") return kvp.Key;
+            if (ext == ".plist" && id == "macPlist") return kvp.Key;
+        }
+
+        return null;
+    }
+
     private bool CanConvert()
     {
-        return _import != null && _export != null && !string.IsNullOrEmpty(FilePath) && !IsConverting;
+        return _selectedImporter != null && _selectedExporter != null && !string.IsNullOrEmpty(FilePath) && !IsConverting;
     }
 
     private async Task ConvertAsync()
@@ -316,132 +329,56 @@ public class MainWindowViewModel : ViewModelBase
 
     private void PerformConversion()
     {
-        var files = FileOperationHelper.GetFilesPath(FilePath);
+        var files = FilePath.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
-        _mainBody = new MainBody
-        {
-            SelectedWordRankGenerater = _wordRankGenerater,
-            Import = _import!,
-            Export = _export!,
-            SelectedTranslate = _translate,
-            SelectedConverter = _chineseConverter,
-            Filters = GetFilters(),
-            SortType = SortType.Default,
-            SortDesc = false,
-            BatchFilters = GetBatchFilters(),
-            ReplaceFilters = GetReplaceFilters(),
-            FilterConfig = _filterConfig
-        };
+        var pipeline = _serviceProvider!.GetRequiredService<ConversionPipeline>();
 
-        _mainBody.ProcessNotice += (msg) =>
+        // 用临时文件做输出
+        var tempFile = Path.GetTempFileName();
+
+        var request = new ConversionRequest
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            InputFormatId = _selectedImporter!.Metadata.Id,
+            OutputFormatId = _selectedExporter!.Metadata.Id,
+            InputPaths = files,
+            OutputPath = tempFile,
+            Options = new ConversionOptions
             {
-                StatusMessage = msg;
-                ResultText += msg + "\n";
-            });
+                ChineseConversion = _chineseConversion
+            }
         };
 
-        try
+        var result = pipeline.ExecuteAsync(request).GetAwaiter().GetResult();
+
+        if (result.IsSuccess)
         {
-            _mainBody.Convert(files);
+            var content = File.ReadAllText(tempFile);
 
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                if (!ExportDirectly && MergeToOneFile)
+                if (ShowLess && content.Length > 200000)
                 {
-                    var dataText = string.Join("\n", _mainBody.ExportContents);
-                    if (ShowLess && dataText.Length > 200000)
-                    {
-                        ResultText = "为避免输出时卡死，本文本框中不显示转换后的全部结果。\n\n" +
-                                   dataText.Substring(0, 100000) + "\n\n\n...\n\n\n" +
-                                   dataText.Substring(dataText.Length - 100000);
-                    }
-                    else if (dataText.Length > 0)
-                    {
-                        ResultText = dataText;
-                    }
+                    ResultText = "为避免输出时卡死，本文本框中不显示转换后的全部结果。\n\n" +
+                               content[..100000] + "\n\n\n...\n\n\n" +
+                               content[^100000..];
                 }
-
-                StatusMessage = $"转换完成，共转换 {_mainBody.Count} 条词库";
+                else
+                {
+                    ResultText = content;
+                }
+                StatusMessage = $"转换完成，导入 {result.Value.ImportedCount} 条，导出 {result.Value.ExportedCount} 条";
             });
+
+            _lastTempFile = tempFile;
         }
-        catch (Exception ex)
+        else
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                StatusMessage = $"转换失败: {ex.Message}";
-                ResultText += $"\n错误: {ex.Message}";
+                StatusMessage = $"转换失败: {result.Error}";
+                ResultText = result.Error ?? "未知错误";
             });
         }
-    }
-
-    private IList<ISingleFilter> GetFilters()
-    {
-        var filters = new List<ISingleFilter>();
-        if (_filterConfig.NoFilter) return filters;
-
-        if (_filterConfig.IgnoreEnglish) filters.Add(new EnglishFilter());
-        if (_filterConfig.IgnoreFirstCJK) filters.Add(new FirstCJKFilter());
-
-        var lenFilter = new LengthFilter
-        {
-            MinLength = _filterConfig.WordLengthFrom,
-            MaxLength = _filterConfig.WordLengthTo
-        };
-        if (_filterConfig.WordLengthFrom > 1 || _filterConfig.WordLengthTo < 9999)
-            filters.Add(lenFilter);
-
-        var rankFilter = new RankFilter
-        {
-            MaxLength = _filterConfig.WordRankTo,
-            MinLength = _filterConfig.WordRankFrom
-        };
-        if (_filterConfig.WordRankFrom > 1 || _filterConfig.WordRankTo < 999999)
-            filters.Add(rankFilter);
-
-        if (_filterConfig.IgnoreSpace) filters.Add(new SpaceFilter());
-        if (_filterConfig.IgnorePunctuation)
-        {
-            filters.Add(new ChinesePunctuationFilter());
-            filters.Add(new EnglishPunctuationFilter());
-        }
-        if (_filterConfig.IgnoreNumber) filters.Add(new NumberFilter());
-        if (_filterConfig.IgnoreNoAlphabetCode) filters.Add(new NoAlphabetCodeFilter());
-
-        return filters;
-    }
-
-    private IList<IBatchFilter> GetBatchFilters()
-    {
-        var filters = new List<IBatchFilter>();
-        if (_filterConfig.NoFilter) return filters;
-
-        if (_filterConfig.WordRankPercentage < 100)
-        {
-            var filter = new RankPercentageFilter
-            {
-                Percentage = _filterConfig.WordRankPercentage
-            };
-            filters.Add(filter);
-        }
-
-        return filters;
-    }
-
-    private IList<IReplaceFilter> GetReplaceFilters()
-    {
-        var filters = new List<IReplaceFilter>();
-        if (_filterConfig.ReplaceEnglish) filters.Add(new EnglishFilter());
-        if (_filterConfig.ReplacePunctuation)
-        {
-            filters.Add(new EnglishPunctuationFilter());
-            filters.Add(new ChinesePunctuationFilter());
-        }
-        if (_filterConfig.ReplaceSpace) filters.Add(new SpaceFilter());
-        if (_filterConfig.ReplaceNumber) filters.Add(new NumberFilter());
-
-        return filters;
     }
 
     #endregion
@@ -452,17 +389,8 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            var window = new ImeWlConverterMac.Views.FilterConfigWindow(_filterConfig);
-            var mainWindow = GetMainWindow();
-            if (mainWindow != null)
-            {
-                var result = await window.ShowDialog<bool?>(mainWindow);
-                if (result == true)
-                {
-                    _filterConfig = window.FilterConfig;
-                    StatusMessage = "过滤配置已更新";
-                }
-            }
+            // FilterConfig 窗口暂时使用简化版（不应用过滤）
+            StatusMessage = "过滤配置功能正在升级中，暂时使用默认配置";
         }
         catch (Exception ex)
         {
@@ -474,17 +402,8 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            var window = new ImeWlConverterMac.Views.WordRankGenerateWindow(_wordRankGenerater);
-            var mainWindow = GetMainWindow();
-            if (mainWindow != null)
-            {
-                var result = await window.ShowDialog<bool?>(mainWindow);
-                if (result == true)
-                {
-                    _wordRankGenerater = window.WordRankGenerater;
-                    StatusMessage = "词频生成配置已更新";
-                }
-            }
+            // 词频生成功能暂时使用默认配置
+            StatusMessage = "词频生成配置功能正在升级中，暂时使用默认配置";
         }
         catch (Exception ex)
         {
@@ -496,15 +415,14 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            var window = new ImeWlConverterMac.Views.ChineseConverterSelectWindow(_translate, _chineseConverter);
+            var window = new ImeWlConverterMac.Views.ChineseConverterSelectWindow(_chineseConversion);
             var mainWindow = GetMainWindow();
             if (mainWindow != null)
             {
                 var result = await window.ShowDialog<bool?>(mainWindow);
                 if (result == true)
                 {
-                    _translate = window.SelectedTranslate;
-                    _chineseConverter = window.SelectedConverter;
+                    _chineseConversion = window.SelectedConversionMode;
                     StatusMessage = "简繁体转换配置已更新";
                 }
             }
@@ -627,44 +545,9 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task HandleConversionCompleted()
     {
-        if (_mainBody == null) return;
-
-        // 检查是否需要保存文件（参考Windows版本逻辑）
-        bool needsSaveDialog = MergeToOneFile &&
-                              !(_export?.GetType().Name.Contains("Win10") == true ||
-                                _export?.GetType().Name.Contains("Gboard") == true);
-
-        if (!needsSaveDialog)
-        {
-            StatusMessage = "转换完成！";
-            return;
-        }
-
-        if (_mainBody.Count > 0)
-        {
-            // 显示转换结果
-            if (!ExportDirectly && MergeToOneFile)
-            {
-                var dataText = string.Join("\n", _mainBody.ExportContents);
-                if (ShowLess && dataText.Length > 200000)
-                {
-                    ResultText = "为避免输出时卡死，本文本框中不显示转换后的全部结果。\n\n" +
-                               dataText.Substring(0, 100000) + "\n\n\n...\n\n\n" +
-                               dataText.Substring(dataText.Length - 100000);
-                }
-                else if (dataText.Length > 0)
-                {
-                    ResultText = dataText;
-                }
-            }
-
-            // 询问用户是否保存
+        if (string.IsNullOrEmpty(_lastTempFile)) return;
+        if (ResultText.Length > 0)
             await ShowSaveDialog();
-        }
-        else
-        {
-            StatusMessage = "转换失败，没有找到词条";
-        }
     }
 
     private async Task ShowSaveDialog()
@@ -681,7 +564,7 @@ public class MainWindowViewModel : ViewModelBase
                     new("文本文件") { Patterns = new[] { "*.txt" } }
                 };
 
-                if (_export?.GetType().Name.Contains("MsPinyin") == true)
+                if (_selectedExporter?.Metadata.Id.Contains("msPinyin") == true)
                 {
                     defaultExt = ".dctx";
                     fileTypes.Insert(0, new("微软拼音") { Patterns = new[] { "*.dctx" } });
@@ -700,7 +583,7 @@ public class MainWindowViewModel : ViewModelBase
                 if (file != null)
                 {
                     var filePath = file.Path.LocalPath;
-                    _mainBody?.ExportToFile(filePath);
+                    File.Copy(_lastTempFile!, filePath, overwrite: true);
                     StatusMessage = $"保存成功，词库路径：{filePath}";
                 }
                 else

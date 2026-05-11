@@ -11,10 +11,6 @@ using ImeWlConverter.Abstractions.Results;
 [FormatPlugin("cjpt", "仓颉平台", 230)]
 public sealed partial class CangjiePlatformExporter : IFormatExporter
 {
-    static CangjiePlatformExporter()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
     public Task<ExportResult> ExportAsync(
         IReadOnlyList<WordEntry> entries, Stream output,
         ExportOptions? options = null, CancellationToken ct = default)

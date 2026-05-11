@@ -30,7 +30,7 @@ public sealed class CodeGenerationService
     /// <returns>A new entry with the generated code, or the original entry if unchanged.</returns>
     public WordEntry GenerateCode(WordEntry entry, CodeType targetCodeType)
     {
-        if (entry.CodeType == targetCodeType)
+        if (entry.CodeType == targetCodeType && entry.Code is not null && entry.Code.Segments.Count > 0)
             return entry;
 
         if (!_generators.TryGetValue(targetCodeType, out var generator))

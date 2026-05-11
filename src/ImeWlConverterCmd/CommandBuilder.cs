@@ -1,82 +1,55 @@
-/*
- *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
-
- *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
-
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
-
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 #nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
+using ImeWlConverter.Abstractions.Contracts;
+using ImeWlConverter.Abstractions.Enums;
+using ImeWlConverter.Abstractions.Models;
+using ImeWlConverter.Abstractions.Options;
+using ImeWlConverter.Core;
+using ImeWlConverter.Core.CodeGeneration;
+using ImeWlConverter.Core.Filters;
+using ImeWlConverter.Core.Pipeline;
+using ImeWlConverter.Core.WordRank;
+using ImeWlConverter.Formats;
+using ImeWlConverter.Formats.SelfDefining;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Studyzy.IMEWLConverter;
 
-/// <summary>
-/// 命令行参数构建器，使用 System.CommandLine 定义所有选项
-/// </summary>
 public static class CommandBuilder
 {
     public static RootCommand Build()
     {
         var rootCommand = new RootCommand("IME WL Converter - 深蓝词库转换\n" +
-                                          "跨平台的输入法词库转换工具，支持 20+ 种输入法格式");
+                                          "跨平台的输入法词库转换工具，支持 50+ 种输入法格式");
 
-        // 必填选项：输入格式
         var inputFormatOption = new Option<string>(
             aliases: new[] { "--input-format", "-i" },
             description: "输入词库格式代码 (例如: scel, ggpy, qqpy, rime, bdpy)")
-        {
-            IsRequired = false  // 改为非必填，在 handler 中检查
-        };
+        { IsRequired = false };
         rootCommand.AddOption(inputFormatOption);
 
-        // 必填选项：输出格式
         var outputFormatOption = new Option<string>(
             aliases: new[] { "--output-format", "-o" },
             description: "输出词库格式代码 (例如: ggpy, rime, self, qqpy)")
-        {
-            IsRequired = false  // 改为非必填
-        };
+        { IsRequired = false };
         rootCommand.AddOption(outputFormatOption);
 
-        // 必填选项：输出路径
         var outputPathOption = new Option<string>(
             aliases: new[] { "--output", "-O" },
             description: "输出文件路径或目录路径（目录路径以 / 结尾）")
-        {
-            IsRequired = false  // 改为非必填
-        };
+        { IsRequired = false };
         rootCommand.AddOption(outputPathOption);
 
-        // 必填位置参数：输入文件
         var inputFilesArgument = new Argument<List<string>>(
             name: "input-files",
             description: "输入词库文件路径（支持多个文件和通配符）")
-        {
-            Arity = ArgumentArity.ZeroOrMore  // 改为可选
-        };
+        { Arity = ArgumentArity.ZeroOrMore };
         rootCommand.AddArgument(inputFilesArgument);
 
-        // 可选选项：编码文件
-        var codeFileOption = new Option<string?>(
-            aliases: new[] { "--code-file", "-c" },
-            description: "自定义编码映射文件路径（用于自定义编码类型）");
-        rootCommand.AddOption(codeFileOption);
-
-        // 可选选项：过滤条件
         var filterOption = new Option<string?>(
             aliases: new[] { "--filter", "-f" },
             description: "过滤条件 (例如: \"len:1-100|rm:eng|rm:num\")\n" +
@@ -88,77 +61,25 @@ public static class CommandBuilder
                         "  rm:pun       - 移除包含标点的词条");
         rootCommand.AddOption(filterOption);
 
-        // 可选选项：自定义格式
         var customFormatOption = new Option<string?>(
             aliases: new[] { "--custom-format", "-F" },
-            description: "自定义格式规范 (例如: \"213, nyyn\")\n" +
-                        "  格式: <顺序><分隔符1><分隔符2><位置><显示>\n" +
-                        "  213  - 顺序: 1=拼音 2=汉字 3=词频\n" +
-                        "  ,    - 拼音分隔符\n" +
-                        "  空格 - 字段分隔符\n" +
-                        "  n    - 分隔符位置: l=左 r=右 b=两边 n=无\n" +
-                        "  yyn  - 显示: y=显示 n=不显示 (拼音/汉字/词频)");
+            description: "自定义格式配置 (用于 self 格式)\n" +
+                        "  格式: <顺序><拼音分隔符><字段分隔符><位置><显示>\n" +
+                        "  示例: \"213 ,nyyy\" = 词语,拼音(空格分隔),词频");
         rootCommand.AddOption(customFormatOption);
 
-        // 可选选项：词频生成器
-        var rankGeneratorOption = new Option<string?>(
-            aliases: new[] { "--rank-generator", "-r" },
-            description: "词频生成方式 (llm=大模型生成, 或指定固定数字)");
-        rootCommand.AddOption(rankGeneratorOption);
-
-        // LLM 相关选项
-        var llmEndpointOption = new Option<string?>(
-            aliases: new[] { "--llm-endpoint" },
-            description: "LLM API 地址 (例如: https://api.openai.com/v1/chat/completions)");
-        rootCommand.AddOption(llmEndpointOption);
-
-        var llmKeyOption = new Option<string?>(
-            aliases: new[] { "--llm-key" },
-            description: "LLM API Key");
-        rootCommand.AddOption(llmKeyOption);
-
-        var llmModelOption = new Option<string?>(
-            aliases: new[] { "--llm-model" },
-            description: "LLM 模型名称 (例如: gpt-3.5-turbo)");
-        rootCommand.AddOption(llmModelOption);
-
-        // 可选选项：多字词编码规则
-        var multiCodeOption = new Option<string?>(
-            aliases: new[] { "--multi-code", "-m" },
-            description: "多字词编码生成规则 (例如: \"code_e2=p11+p12+p21+p22,code_e3=p11+p21+p31+p32\")\n" +
-                        "  p11 - 第1个字的第1码\n" +
-                        "  p12 - 第1个字的第2码\n" +
-                        "  n11 - 最后一个字的第1码");
-        rootCommand.AddOption(multiCodeOption);
-
-        // 可选选项：编码类型（用于 Rime）
         var codeTypeOption = new Option<string?>(
             aliases: new[] { "--code-type", "-t" },
             description: "编码类型 (pinyin=拼音, wubi=五笔, zhengma=郑码, cangjie=仓颉, zhuyin=注音)");
         rootCommand.AddOption(codeTypeOption);
 
-        // 可选选项：目标操作系统
-        var targetOSOption = new Option<string?>(
-            aliases: new[] { "--target-os" },
-            description: "目标操作系统 (windows, macos, linux) - 用于 Rime 等格式");
-        rootCommand.AddOption(targetOSOption);
-
-        // 可选选项：Lingoes ld2 编码
-        var ld2EncodingOption = new Option<string?>(
-            aliases: new[] { "--ld2-encoding" },
-            description: "Lingoes ld2 文件编码设置 (例如: \"utf-8\" 或 \"gbk,utf-8\")");
-        rootCommand.AddOption(ld2EncodingOption);
-
-        // 添加 --list-formats 选项
         var listFormatsOption = new Option<bool>(
             aliases: new[] { "--list-formats" },
             description: "显示所有支持的输入法格式列表");
         rootCommand.AddOption(listFormatsOption);
 
-        // 设置处理器 - 使用 context 方式处理参数
         rootCommand.SetHandler((context) =>
         {
-            // 获取 --list-formats 选项
             var listFormats = context.ParseResult.GetValueForOption(listFormatsOption);
             if (listFormats)
             {
@@ -167,84 +88,47 @@ public static class CommandBuilder
                 return;
             }
 
-            // 获取参数值
             var inputFormat = context.ParseResult.GetValueForOption(inputFormatOption);
             var outputFormat = context.ParseResult.GetValueForOption(outputFormatOption);
             var outputPath = context.ParseResult.GetValueForOption(outputPathOption);
             var inputFiles = context.ParseResult.GetValueForArgument(inputFilesArgument);
 
-            // 检查必填参数
             if (string.IsNullOrEmpty(inputFormat))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("错误: 缺少必填选项 --input-format");
-                Console.ResetColor();
-                Console.Error.WriteLine("使用 --help 查看帮助信息");
+                PrintError("缺少必填选项 --input-format");
                 context.ExitCode = 1;
                 return;
             }
-
             if (string.IsNullOrEmpty(outputFormat))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("错误: 缺少必填选项 --output-format");
-                Console.ResetColor();
-                Console.Error.WriteLine("使用 --help 查看帮助信息");
+                PrintError("缺少必填选项 --output-format");
                 context.ExitCode = 1;
                 return;
             }
-
             if (string.IsNullOrEmpty(outputPath))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("错误: 缺少必填选项 --output");
-                Console.ResetColor();
-                Console.Error.WriteLine("使用 --help 查看帮助信息");
+                PrintError("缺少必填选项 --output");
                 context.ExitCode = 1;
                 return;
             }
-
             if (inputFiles == null || inputFiles.Count == 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("错误: 未指定输入文件");
-                Console.ResetColor();
-                Console.Error.WriteLine("使用 --help 查看帮助信息");
+                PrintError("未指定输入文件");
                 context.ExitCode = 1;
                 return;
             }
 
-            // 构建选项对象
-            var options = new CommandLineOptions
-            {
-                InputFormat = inputFormat,
-                OutputFormat = outputFormat,
-                OutputPath = outputPath,
-                InputFiles = inputFiles,
-                CodeFile = context.ParseResult.GetValueForOption(codeFileOption),
-                Filter = context.ParseResult.GetValueForOption(filterOption),
-                CustomFormat = context.ParseResult.GetValueForOption(customFormatOption),
-                RankGenerator = context.ParseResult.GetValueForOption(rankGeneratorOption),
-                LlmEndpoint = context.ParseResult.GetValueForOption(llmEndpointOption),
-                LlmKey = context.ParseResult.GetValueForOption(llmKeyOption),
-                LlmModel = context.ParseResult.GetValueForOption(llmModelOption),
-                MultiCode = context.ParseResult.GetValueForOption(multiCodeOption),
-                CodeType = context.ParseResult.GetValueForOption(codeTypeOption),
-                TargetOS = context.ParseResult.GetValueForOption(targetOSOption),
-                Ld2Encoding = context.ParseResult.GetValueForOption(ld2EncodingOption)
-            };
-
-            // 调用转换逻辑
             try
             {
-                ExecuteConversion(options);
+                var filter = context.ParseResult.GetValueForOption(filterOption);
+                var codeType = context.ParseResult.GetValueForOption(codeTypeOption);
+                var customFormat = context.ParseResult.GetValueForOption(customFormatOption);
+                ExecuteConversion(inputFormat, outputFormat, outputPath, inputFiles, filter, codeType, customFormat);
                 context.ExitCode = 0;
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"错误: {ex.Message}");
-                Console.ResetColor();
+                PrintError(ex.Message);
                 context.ExitCode = 1;
             }
         });
@@ -252,30 +136,202 @@ public static class CommandBuilder
         return rootCommand;
     }
 
+    private static ServiceProvider BuildServiceProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddAllFormats();
+        services.AddImeWlConverterCore();
+        return services.BuildServiceProvider();
+    }
+
     private static void ShowSupportedFormats()
     {
-        var (imports, exports, names) = FormatRegistrar.RegisterAll();
+        using var sp = BuildServiceProvider();
+        var importers = sp.GetServices<IFormatImporter>().OrderBy(i => i.Metadata.SortOrder).ToList();
+        var exporters = sp.GetServices<IFormatExporter>().OrderBy(e => e.Metadata.SortOrder).ToList();
 
         Console.WriteLine("支持的输入格式：");
-        foreach (var kvp in imports.OrderBy(k => k.Key))
-        {
-            var displayName = names.TryGetValue(kvp.Key, out var n) ? n : kvp.Value.GetType().Name;
-            Console.WriteLine($"  {kvp.Key,-15} {displayName}");
-        }
+        foreach (var imp in importers)
+            Console.WriteLine($"  {imp.Metadata.Id,-15} {imp.Metadata.DisplayName}");
 
         Console.WriteLine();
         Console.WriteLine("支持的输出格式：");
-        foreach (var kvp in exports.OrderBy(k => k.Key))
-        {
-            var displayName = names.TryGetValue(kvp.Key, out var n) ? n : kvp.Value.GetType().Name;
-            Console.WriteLine($"  {kvp.Key,-15} {displayName}");
-        }
+        foreach (var exp in exporters)
+            Console.WriteLine($"  {exp.Metadata.Id,-15} {exp.Metadata.DisplayName}");
     }
 
-    private static void ExecuteConversion(CommandLineOptions options)
+    private static void ExecuteConversion(
+        string inputFormat, string outputFormat, string outputPath,
+        List<string> inputFiles, string? filter, string? codeType, string? customFormat)
     {
-        var (imports, exports, _) = FormatRegistrar.RegisterAll();
-        var consoleRun = new ConsoleRun(imports, exports);
-        consoleRun.Execute(options);
+        using var sp = BuildServiceProvider();
+
+        var filterPipeline = ParseFilterPipeline(filter);
+        var targetCodeType = ParseCodeType(codeType);
+
+        var importers = sp.GetServices<IFormatImporter>().ToList();
+        var exporters = sp.GetServices<IFormatExporter>().ToList();
+
+        // Configure self-defining format if -F is provided
+        if (!string.IsNullOrEmpty(customFormat))
+        {
+            foreach (var imp in importers.OfType<SelfDefiningImporter>())
+                ConfigureSelfDefining(imp, customFormat);
+            foreach (var exp in exporters.OfType<SelfDefiningExporter>())
+                ConfigureSelfDefining(exp, customFormat);
+        }
+
+        // Auto-detect code type from output format when not explicitly specified
+        if (targetCodeType == CodeType.NoCode)
+            targetCodeType = InferCodeTypeFromOutputFormat(outputFormat, customFormat);
+
+        var pipeline = new ConversionPipeline(
+            importers,
+            exporters,
+            progress: new ConsoleProgress(),
+            filterPipeline: filterPipeline,
+            chineseConverter: sp.GetService<IChineseConverter>(),
+            wordRankGenerator: sp.GetService<IWordRankGenerator>(),
+            codeGenerationService: sp.GetService<CodeGenerationService>());
+
+        var request = new ConversionRequest
+        {
+            InputFormatId = inputFormat,
+            OutputFormatId = outputFormat,
+            InputPaths = inputFiles,
+            OutputPath = outputPath,
+            Options = new ConversionOptions
+            {
+                CodeGeneration = new CodeGenerationOptions { TargetCodeType = targetCodeType }
+            }
+        };
+
+        var result = pipeline.ExecuteAsync(request).GetAwaiter().GetResult();
+        if (!result.IsSuccess)
+            throw new InvalidOperationException(result.Error);
+
+        Console.WriteLine($"转换完成: 导入 {result.Value.ImportedCount} 条, " +
+                         $"过滤 {result.Value.FilteredCount} 条, " +
+                         $"导出 {result.Value.ExportedCount} 条");
+    }
+
+    private static void ConfigureSelfDefining(SelfDefiningImporter importer, string spec)
+    {
+        if (spec.Length < 7) return;
+        importer.OrderSpec = spec[..3];
+        importer.PinyinSeparator = spec[3];
+        importer.FieldSeparator = spec[4];
+        // spec[5] = position indicator (l/r/b/n) - not used for import
+        importer.ShowPinyin = spec.Length > 6 && spec[6] == 'y';
+        importer.ShowWord = spec.Length > 7 && spec[7] == 'y';
+        importer.ShowRank = spec.Length > 8 && spec[8] == 'y';
+    }
+
+    private static void ConfigureSelfDefining(SelfDefiningExporter exporter, string spec)
+    {
+        if (spec.Length < 7) return;
+        exporter.OrderSpec = spec[..3];
+        exporter.PinyinSeparator = spec[3];
+        exporter.FieldSeparator = spec[4];
+        // spec[5] = position indicator (l/r/b/n) - not used for export
+        exporter.ShowPinyin = spec.Length > 6 && spec[6] == 'y';
+        exporter.ShowWord = spec.Length > 7 && spec[7] == 'y';
+        exporter.ShowRank = spec.Length > 8 && spec[8] == 'y';
+    }
+
+    private static FilterPipeline? ParseFilterPipeline(string? filterStr)
+    {
+        if (string.IsNullOrEmpty(filterStr)) return null;
+
+        var filters = new List<IWordFilter>();
+        var transforms = new List<IWordTransform>();
+
+        foreach (var part in filterStr.Split('|'))
+        {
+            if (part.StartsWith("len:"))
+            {
+                var range = part[4..].Split('-');
+                filters.Add(new LengthFilter
+                {
+                    MinLength = int.Parse(range[0]),
+                    MaxLength = range.Length > 1 ? int.Parse(range[1]) : 9999
+                });
+            }
+            else if (part.StartsWith("rank:"))
+            {
+                var range = part[5..].Split('-');
+                filters.Add(new RankFilter
+                {
+                    MinRank = int.Parse(range[0]),
+                    MaxRank = range.Length > 1 ? int.Parse(range[1]) : 999999
+                });
+            }
+            else if (part == "rm:eng") filters.Add(new EnglishFilter());
+            else if (part == "rm:num") filters.Add(new NumberFilter());
+            else if (part == "rm:space") filters.Add(new SpaceFilter());
+            else if (part == "rm:pun")
+            {
+                filters.Add(new ChinesePunctuationFilter());
+                filters.Add(new EnglishPunctuationFilter());
+            }
+        }
+
+        return filters.Count == 0 && transforms.Count == 0
+            ? null
+            : new FilterPipeline(filters, transforms);
+    }
+
+    private static CodeType InferCodeTypeFromOutputFormat(string outputFormat, string? customFormat)
+    {
+        // Wubi formats
+        return outputFormat switch
+        {
+            "wb86" => CodeType.Wubi86,
+            "wb98" => CodeType.Wubi98,
+            "wbnewage" => CodeType.WubiNewAge,
+            "jd" or "qqwb" or "xywb" => CodeType.Wubi86,
+            "jdzm" => CodeType.Zhengma,
+            "cjpt" => CodeType.Cangjie5,
+            // Formats that don't need code
+            "word" => CodeType.NoCode,
+            // Self-defining: check if pinyin display is requested
+            "self" when !string.IsNullOrEmpty(customFormat) && customFormat.Length > 6 && customFormat[6] == 'y'
+                => CodeType.Pinyin,
+            // All other formats (pinyin-based)
+            _ => CodeType.Pinyin
+        };
+    }
+
+    private static CodeType ParseCodeType(string? codeType)
+    {
+        return codeType?.ToLowerInvariant() switch
+        {
+            "pinyin" => CodeType.Pinyin,
+            "wubi" or "wubi86" => CodeType.Wubi86,
+            "wubi98" => CodeType.Wubi98,
+            "wubinage" or "wubi_newage" => CodeType.WubiNewAge,
+            "zhengma" => CodeType.Zhengma,
+            "cangjie" or "cangjie5" => CodeType.Cangjie5,
+            "zhuyin" => CodeType.Zhuyin,
+            "terra" or "terra_pinyin" => CodeType.TerraPinyin,
+            _ => CodeType.NoCode
+        };
+    }
+
+    private static void PrintError(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Error.WriteLine($"错误: {message}");
+        Console.ResetColor();
+        Console.Error.WriteLine("使用 --help 查看帮助信息");
+    }
+
+    private sealed class ConsoleProgress : IProgress<ProgressInfo>
+    {
+        public void Report(ProgressInfo value)
+        {
+            if (!string.IsNullOrEmpty(value.Message))
+                Console.Error.Write($"\r{value.Message}");
+        }
     }
 }

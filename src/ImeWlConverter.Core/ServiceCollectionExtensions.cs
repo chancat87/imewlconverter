@@ -1,6 +1,9 @@
 using ImeWlConverter.Abstractions.Contracts;
 using ImeWlConverter.Core.CodeGeneration;
+using ImeWlConverter.Core.CodeGeneration.Generators;
+using ImeWlConverter.Core.Language;
 using ImeWlConverter.Core.Pipeline;
+using ImeWlConverter.Core.WordRank;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ImeWlConverter.Core;
@@ -11,16 +14,37 @@ namespace ImeWlConverter.Core;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers core conversion pipeline services including
-    /// <see cref="IConversionPipeline"/>, <see cref="CodeGenerationService"/>, and <see cref="FilterPipeline"/>.
+    /// Registers all core conversion services: pipeline, code generators, filters, converters.
     /// </summary>
-    /// <param name="services">The service collection to add to.</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddImeWlConverterCore(this IServiceCollection services)
     {
-        services.AddSingleton<IConversionPipeline, ConversionPipeline>();
+        // Pipeline
+        services.AddSingleton<ConversionPipeline>();
+        services.AddSingleton<IConversionPipeline>(sp => sp.GetRequiredService<ConversionPipeline>());
         services.AddSingleton<CodeGenerationService>();
         services.AddSingleton<FilterPipeline>();
+
+        // Chinese converter
+        services.AddSingleton<IChineseConverter, ChineseConverter>();
+
+        // Word rank generator
+        services.AddSingleton<IWordRankGenerator, DefaultWordRankGenerator>();
+
+        // Code generators
+        services.AddSingleton<ICodeGenerator, PinyinCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, TerraPinyinCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, Wubi86CodeGenerator>();
+        services.AddSingleton<ICodeGenerator, Wubi98CodeGenerator>();
+        services.AddSingleton<ICodeGenerator, WubiNewAgeCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, ZhengmaCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, Cangjie5CodeGenerator>();
+        services.AddSingleton<ICodeGenerator, ZhuyinCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, ChaoyinCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, QingsongErbiCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, ChaoqiangErbiCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, XiandaiErbiCodeGenerator>();
+        services.AddSingleton<ICodeGenerator, YinxingErbiCodeGenerator>();
+
         return services;
     }
 }

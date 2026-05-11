@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using Studyzy.IMEWLConverter.Helpers;
+using ImeWlConverter.Core.Helpers;
 
 namespace ImeWlConverterMac.Views;
 

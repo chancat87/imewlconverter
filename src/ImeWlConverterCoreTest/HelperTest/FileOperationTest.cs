@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -20,12 +20,17 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Xunit;
-using Studyzy.IMEWLConverter.Helpers;
+using ImeWlConverter.Core.Helpers;
 
 namespace Studyzy.IMEWLConverter.Test.HelperTest;
 
 public class FileOperationTest
 {
+    public FileOperationTest()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     [Theory]
     [InlineData("Test/u8nobomzy.txt", "UTF-8")]
     [InlineData("Test/luna_pinyin_export.txt", "UTF-8")]
@@ -34,7 +39,6 @@ public class FileOperationTest
     public void TestGetFileEncoding(string path, string encoding)
     {
         path = GetFullPath(path);
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         var e = FileOperationHelper.GetEncodingType(path);
         Assert.Equal(Encoding.GetEncoding(encoding).EncodingName, e.EncodingName);
         var txt = FileOperationHelper.ReadFile(path);
@@ -44,7 +48,6 @@ public class FileOperationTest
     public void TestCodePagesEncodingProviderRequired()
     {
         // After registration, GB2312 encoding should be available
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         Assert.Equal("Chinese Simplified (GB2312)", Encoding.GetEncoding("GB2312").EncodingName);
     }
 
@@ -60,6 +63,6 @@ public class FileOperationTest
 
     protected static string GetFullPath(string fileName)
     {
-        return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), fileName);
+        return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, fileName);
     }
 }

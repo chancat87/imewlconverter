@@ -3,19 +3,15 @@ using ImeWlConverter.Abstractions.Models;
 namespace ImeWlConverter.Abstractions.Contracts;
 
 /// <summary>
-/// Generates frequency ranks for words.
+/// Generates word frequency rank for entries that lack rank information.
 /// </summary>
 public interface IWordRankGenerator
 {
-    /// <summary>Whether this generator should override existing ranks.</summary>
-    bool ForceOverride { get; }
+    /// <summary>Generate rank for a single word entry.</summary>
+    int GenerateRank(WordEntry entry);
 
-    /// <summary>Generate rank for a single word.</summary>
-    Task<int> GenerateRankAsync(string word, CancellationToken ct = default);
-
-    /// <summary>Generate ranks for a batch of entries.</summary>
+    /// <summary>Generate ranks for a batch of entries (useful for LLM-based generators).</summary>
     Task<IReadOnlyList<WordEntry>> GenerateRanksAsync(
         IReadOnlyList<WordEntry> entries,
-        IProgress<ProgressInfo>? progress = null,
         CancellationToken ct = default);
 }

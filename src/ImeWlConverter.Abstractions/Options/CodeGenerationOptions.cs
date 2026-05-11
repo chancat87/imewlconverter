@@ -1,8 +1,13 @@
+using ImeWlConverter.Abstractions.Enums;
+
 namespace ImeWlConverter.Abstractions.Options;
 
 /// <summary>Options for code generation during conversion.</summary>
 public sealed class CodeGenerationOptions
 {
+    /// <summary>Target code type to generate. NoCode means skip code generation.</summary>
+    public CodeType TargetCodeType { get; init; } = CodeType.NoCode;
+
     /// <summary>Keep English characters in generated code.</summary>
     public bool KeepEnglishInCode { get; init; }
 

@@ -26,7 +26,7 @@ public abstract class TextFormatExporter : IFormatExporter
     /// <summary>Optional header to write before entries.</summary>
     protected virtual string? GetHeader() => null;
 
-    public async Task<ExportResult> ExportAsync(
+    public virtual async Task<ExportResult> ExportAsync(
         IReadOnlyList<WordEntry> entries, Stream output,
         ExportOptions? options = null, CancellationToken ct = default)
     {

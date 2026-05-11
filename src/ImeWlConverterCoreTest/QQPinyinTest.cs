@@ -1,4 +1,4 @@
-﻿/*
+/*
  *   Copyright © 2009-2020 studyzy(深蓝,曾毅)
 
  *   This program "IME WL Converter(深蓝词库转换)" is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 
 using System;
 using Xunit;
-using Studyzy.IMEWLConverter.IME;
+using ImeWlConverter.Formats.QQPinyin;
 
 namespace Studyzy.IMEWLConverter.Test;
 
@@ -25,8 +25,8 @@ public class QQPinyinTest : BaseTest
 {
     public QQPinyinTest()
     {
-        exporter = new QQPinyin();
-        importer = new QQPinyin();
+        exporter = new QQPinyinExporter();
+        importer = new QQPinyinImporter();
     }
 
     protected override string StringData => throw new NotImplementedException();
@@ -34,7 +34,7 @@ public class QQPinyinTest : BaseTest
     [Fact]
     public void TestImport()
     {
-        var wll = importer.Import(GetFullPath("QQPinyin.txt"));
-        Assert.True(wll.Count > 0);
+        var result = ImportFromFile(GetFullPath("QQPinyin.txt"));
+        Assert.True(result.Entries.Count > 0);
     }
 }
