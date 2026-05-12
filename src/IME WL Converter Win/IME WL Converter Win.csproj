@@ -147,6 +147,7 @@ GitHub: https://github.com/studyzy/imewlconverter</Description>
         <ProjectReference Include="..\ImeWlConverter.Abstractions\ImeWlConverter.Abstractions.csproj"/>
         <ProjectReference Include="..\ImeWlConverter.Core\ImeWlConverter.Core.csproj"/>
         <ProjectReference Include="..\ImeWlConverter.Formats\ImeWlConverter.Formats.csproj"/>
+        <ProjectReference Include="..\ImeWlConverterCmd\ImeWlConverterCmd.csproj"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Remove="Forms\CreatePinyinWLForm.cs"/>

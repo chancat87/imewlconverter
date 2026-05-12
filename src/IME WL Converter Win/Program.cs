@@ -16,6 +16,10 @@
  */
 
 using System;
+using System.CommandLine;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 using ImeWlConverter.Core;
 using ImeWlConverter.Formats;
@@ -25,9 +29,30 @@ namespace Studyzy.IMEWLConverter;
 
 internal static class Program
 {
+    [DllImport("kernel32.dll")]
+    private static extern bool AttachConsole(int dwProcessId);
+
+    private const int ATTACH_PARENT_PROCESS = -1;
+
     [STAThread]
-    private static void Main(string[] args)
+    private static int Main(string[] args)
     {
+        if (args.Length > 0)
+        {
+            // CLI 模式：附着到父进程控制台，使输出在命令行中可见
+            AttachConsole(ATTACH_PARENT_PROCESS);
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            // 使用控制台当前代码页的编码，避免中文乱码
+            var encoding = Console.OutputEncoding;
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput(), encoding) { AutoFlush = true });
+            Console.SetError(new StreamWriter(Console.OpenStandardError(), encoding) { AutoFlush = true });
+
+            var rootCommand = CommandBuilder.Build();
+            return rootCommand.Invoke(args);
+        }
+
+        // GUI 模式
         Application.EnableVisualStyles();
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.SetCompatibleTextRenderingDefault(false);
@@ -38,5 +63,6 @@ internal static class Program
         var serviceProvider = services.BuildServiceProvider();
 
         Application.Run(new MainForm(serviceProvider));
+        return 0;
     }
 }
