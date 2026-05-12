@@ -101,7 +101,7 @@ public partial class MergeWLWindow : Window
 
     private async void PerformMerge()
     {
-        var mainWL = FileOperationHelper.ReadFile(txbMainWLFile.Text);
+        var mainWL = FileOperationHelper.ReadFile(txbMainWLFile.Text ?? "");
         var mainDict = ConvertTxt2Dictionary(mainWL);
         var userFiles = (txbUserWLFiles.Text ?? "").Split('|');
 

@@ -114,9 +114,9 @@ public sealed partial class QQPinyinQcelImporter : BinaryFormatImporter
 
             // Skip 2 bytes (unknown short) + 4 bytes (unknown int)
             var skip1 = new byte[2];
-            fs.Read(skip1, 0, 2);
+            fs.ReadExactly(skip1, 0, 2);
             var skip2 = new byte[4];
-            fs.Read(skip2, 0, 4);
+            fs.ReadExactly(skip2, 0, 4);
 
             results.Add(new WordEntry
             {
@@ -128,7 +128,7 @@ public sealed partial class QQPinyinQcelImporter : BinaryFormatImporter
 
             // Skip trailing 6 bytes per entry
             var trailing = new byte[6];
-            fs.Read(trailing, 0, 6);
+            fs.ReadExactly(trailing, 0, 6);
         }
 
         return results;
