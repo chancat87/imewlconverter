@@ -66,8 +66,19 @@ public static class CommandBuilder
 
         var codeTypeOption = new Option<string?>(
             aliases: new[] { "--code-type", "-t" },
-            description: "编码类型 (pinyin=拼音, wubi=五笔, zhengma=郑码, cangjie=仓颉, zhuyin=注音)");
+            description: "编码类型 (pinyin=拼音, wubi=五笔, zhengma=郑码, cangjie=仓颉, zhuyin=注音, userdefine=自定义)");
         rootCommand.AddOption(codeTypeOption);
+
+        var codeFileOption = new Option<string?>(
+            aliases: new[] { "--code-file", "-c" },
+            description: "自定义编码映射表文件路径（Tab分隔，格式：汉字\\t编码）");
+        rootCommand.AddOption(codeFileOption);
+
+        var multiCodeOption = new Option<string?>(
+            aliases: new[] { "--multi-code", "-m" },
+            description: "多字词编码规则（逗号分隔）\n" +
+                        "  示例: \"code_e2=p11+p12+p21+p22,code_e3=p11+p21+p31+p32,code_a4=p11+p21+p31+n11\"");
+        rootCommand.AddOption(multiCodeOption);
 
         var listFormatsOption = new Option<bool>(
             aliases: new[] { "--list-formats" },
@@ -119,7 +130,9 @@ public static class CommandBuilder
                 var filter = context.ParseResult.GetValueForOption(filterOption);
                 var codeType = context.ParseResult.GetValueForOption(codeTypeOption);
                 var customFormat = context.ParseResult.GetValueForOption(customFormatOption);
-                ExecuteConversion(inputFormat, outputFormat, outputPath, inputFiles, filter, codeType, customFormat);
+                var codeFile = context.ParseResult.GetValueForOption(codeFileOption);
+                var multiCode = context.ParseResult.GetValueForOption(multiCodeOption);
+                ExecuteConversion(inputFormat, outputFormat, outputPath, inputFiles, filter, codeType, customFormat, codeFile, multiCode);
                 context.ExitCode = 0;
             }
             catch (Exception ex)
@@ -158,7 +171,8 @@ public static class CommandBuilder
 
     private static void ExecuteConversion(
         string inputFormat, string outputFormat, string outputPath,
-        List<string> inputFiles, string? filter, string? codeType, string? customFormat)
+        List<string> inputFiles, string? filter, string? codeType, string? customFormat,
+        string? codeFile, string? multiCode)
     {
         using var sp = BuildServiceProvider();
 
@@ -177,6 +191,10 @@ public static class CommandBuilder
                 ConfigureSelfDefining(exp, customFormat);
         }
 
+        // If code file is provided, use UserDefine code type
+        if (!string.IsNullOrEmpty(codeFile))
+            targetCodeType = CodeType.UserDefine;
+
         // Auto-detect code type from output format when not explicitly specified
         if (targetCodeType == CodeType.NoCode)
             targetCodeType = InferCodeTypeFromOutputFormat(outputFormat, customFormat);
@@ -192,7 +210,12 @@ public static class CommandBuilder
             FilterConfig = filterConfig,
             Options = new ConversionOptions
             {
-                CodeGeneration = new CodeGenerationOptions { TargetCodeType = targetCodeType }
+                CodeGeneration = new CodeGenerationOptions
+                {
+                    TargetCodeType = targetCodeType,
+                    CodeFilePath = codeFile,
+                    MultiCodeFormat = multiCode
+                }
             }
         };
 
@@ -291,6 +314,7 @@ public static class CommandBuilder
             "cangjie" or "cangjie5" => CodeType.Cangjie5,
             "zhuyin" => CodeType.Zhuyin,
             "terra" or "terra_pinyin" => CodeType.TerraPinyin,
+            "userdefine" or "user_define" or "custom" => CodeType.UserDefine,
             _ => CodeType.NoCode
         };
     }

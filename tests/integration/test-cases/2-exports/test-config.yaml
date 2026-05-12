@@ -237,7 +237,7 @@ test_cases:
 
 - name: E17-CSV到行列30自定义编码
   description: 测试使用array30编码映射表和多字词规则导出为行列30自定义编码格式
-  enabled: false
+  enabled: true
   timeout: 30
   expect_failure: false
   input:

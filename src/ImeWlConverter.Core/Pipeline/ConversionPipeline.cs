@@ -5,7 +5,9 @@ using ImeWlConverter.Abstractions.Models;
 using ImeWlConverter.Abstractions.Options;
 using ImeWlConverter.Abstractions.Results;
 using ImeWlConverter.Core.CodeGeneration;
+using ImeWlConverter.Core.CodeGeneration.Generators;
 using ImeWlConverter.Core.Filters;
+using ImeWlConverter.Core.Helpers;
 
 namespace ImeWlConverter.Core.Pipeline;
 
@@ -259,11 +261,41 @@ public sealed class ConversionPipeline : IConversionPipeline
         IReadOnlyList<WordEntry> entries, CodeGenerationOptions options,
         IProgress<ProgressInfo>? progress)
     {
-        if (_codeGenerationService is null || options.TargetCodeType == CodeType.NoCode)
+        if (options.TargetCodeType == CodeType.NoCode)
+            return entries;
+
+        // UserDefine 类型需要动态构建 SelfDefiningCodeGenerator
+        if (options.TargetCodeType == CodeType.UserDefine && !string.IsNullOrEmpty(options.CodeFilePath))
+        {
+            progress?.Report(new ProgressInfo(0, entries.Count, "正在生成自定义编码..."));
+            var generator = BuildSelfDefiningCodeGenerator(options);
+            var result = new List<WordEntry>(entries.Count);
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var code = generator.GenerateCode(entries[i].Word);
+                result.Add(entries[i] with { Code = code, CodeType = CodeType.UserDefine });
+                progress?.Report(new ProgressInfo(i + 1, entries.Count, "正在生成自定义编码..."));
+            }
+            return result;
+        }
+
+        if (_codeGenerationService is null)
             return entries;
 
         progress?.Report(new ProgressInfo(0, entries.Count, "正在生成编码..."));
         return _codeGenerationService.GenerateCodes(entries, options.TargetCodeType, progress);
+    }
+
+    private static SelfDefiningCodeGenerator BuildSelfDefiningCodeGenerator(CodeGenerationOptions options)
+    {
+        var dict = UserCodingHelper.GetCodingDict(options.CodeFilePath!, Encoding.UTF8);
+        var formatStr = options.MultiCodeFormat?.Replace(',', '\n') ?? "";
+        return new SelfDefiningCodeGenerator
+        {
+            MappingDictionary = dict,
+            MutiWordCodeFormat = formatStr,
+            Is1Char1Code = false
+        };
     }
 
     /// <summary>
