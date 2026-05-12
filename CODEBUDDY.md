@@ -6,11 +6,13 @@
 | 你想做什么 | 入口文件/目录 |
 |-----------|-------------|
 | 添加新的输入法格式支持 | `src/ImeWlConverter.Formats/{Format}/` → 创建 Importer + Exporter |
-| 修改转换管道逻辑 | `src/ImeWlConverterCore/MainBody.cs` (旧) 或 `src/ImeWlConverter.Core/Pipeline/` (新) |
+| 修改转换管道逻辑 | `src/ImeWlConverter.Core/Pipeline/ConversionPipeline.cs` |
 | 修改 CLI 参数/行为 | `src/ImeWlConverterCmd/CommandBuilder.cs` |
-| 修改编码生成（拼音/五笔等） | `src/ImeWlConverterCore/Generaters/` |
-| 修改过滤器 | `src/ImeWlConverterCore/Filters/` |
+| 修改编码生成（拼音/五笔等） | `src/ImeWlConverter.Core/CodeGeneration/Generators/` |
+| 修改过滤器 | `src/ImeWlConverter.Core/Filters/` |
+| 修改过滤配置 DTO | `src/ImeWlConverter.Abstractions/Options/FilterConfig.cs` |
 | 修改 macOS GUI | `src/ImeWlConverterMac/ViewModels/MainWindowViewModel.cs` |
+| 修改 Windows GUI | `src/IME WL Converter Win/Forms/MainForm.cs` |
 | 添加/修改单元测试 | `src/ImeWlConverterCoreTest/` |
 | 修改 CI 流程 | `.github/workflows/ci.yml` |
 | 发布新版本 | `docs/RELEASING.md` |
@@ -29,8 +31,8 @@
 
 ```bash
 make build              # 构建所有项目
-make test               # 运行单元测试 (92个)
-make integration-test   # 运行集成测试 (24个，需先 make build-cmd)
+make test               # 运行单元测试 (81个)
+make integration-test   # 运行集成测试 (28个，需先 make build-cmd)
 make lint               # 检查代码格式
 make format             # 自动格式化代码
 make run-cmd            # 运行 CLI 工具
@@ -42,25 +44,45 @@ make run-mac            # 运行 macOS GUI
 ```
 src/
 ├── ImeWlConverter.Abstractions/     # 接口层（零依赖）
-├── ImeWlConverter.Core/             # 业务服务层
+├── ImeWlConverter.Core/             # 业务服务层（转换管道、编码生成、过滤、简繁转换）
 ├── ImeWlConverter.Formats/          # 格式实现层（86个文件，50+种格式）
 ├── ImeWlConverter.SourceGenerators/ # Source Generator（编译时格式注册）
-├── ImeWlConverterCore/              # 遗留核心库（转换主逻辑仍在此）
 ├── ImeWlConverterCmd/               # CLI 入口
 ├── ImeWlConverterMac/               # macOS GUI (Avalonia 11.2.3)
+├── IME WL Converter Win/            # Windows GUI (WinForms)
 └── ImeWlConverterCoreTest/          # xUnit 单元测试
 ```
 
-### 数据流
+### 三端统一数据流
 
 ```
-CLI 参数 → CommandBuilder → ConsoleRun → MainBody.Convert()
-                                              │
-                              Import ─→ Filter ─→ CodeGen ─→ Export
-                              (旧接口)                        (旧接口)
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│   CLI       │   │  WinForms   │   │  macOS GUI  │
+│ CommandBuild│   │  MainForm   │   │  ViewModel  │
+└──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+       │                 │                  │
+       └────────────┬────┴──────────────────┘
+                    ▼
+        ┌───────────────────────┐
+        │  IConversionPipeline  │  (Abstractions 层接口)
+        └───────────┬───────────┘
+                    ▼
+        ┌───────────────────────┐
+        │  ConversionPipeline   │  (Core 层统一实现)
+        │                       │
+        │  Import → Filter →    │
+        │  ChineseConvert →     │
+        │  WordRank → CodeGen → │
+        │  RemoveEmpty → Export │
+        └───────────────────────┘
 ```
 
-**当前状态**：CLI 通过 `FormatRegistrar`（无反射）注册所有格式，调用 `ConsoleRun.Execute()` → `MainBody.Convert()`。新架构的 `IConversionPipeline` 就绪但尚未接管主路径。
+**设计原则**：三端（CLI、WinForms、macOS GUI）共用同一个 `ConversionPipeline` 底层转换引擎，只在用户交互层不同。
+
+- CLI 通过 `CommandBuilder` 解析参数构建 `ConversionRequest`
+- WinForms 通过 `MainForm` 用户操作构建 `ConversionRequest`
+- macOS GUI 通过 `MainWindowViewModel` 构建 `ConversionRequest`
+- 三端共享 `FilterConfig`（`Abstractions/Options/`）、`ConversionOptions`、`IProgress<ProgressInfo>`
 
 ---
 
@@ -68,57 +90,78 @@ CLI 参数 → CommandBuilder → ConsoleRun → MainBody.Convert()
 
 以下按从外到内的顺序描述各层，你只需要读到与任务相关的层即可。
 
-### Layer 1: CLI 入口 (`src/ImeWlConverterCmd/`)
+### Layer 1: 前端入口
+
+#### CLI (`src/ImeWlConverterCmd/`)
 
 | 文件 | 职责 |
 |------|------|
 | `Program.cs` | 入口，旧参数格式检测，调用 CommandBuilder |
-| `CommandBuilder.cs` | System.CommandLine 定义所有 CLI 选项，调用 `ExecuteConversion` |
-| `FormatRegistrar.cs` | 显式注册所有 50+ 种格式（替代反射），返回 imports/exports 字典 |
+| `CommandBuilder.cs` | System.CommandLine 定义所有 CLI 选项，构建 `ConversionRequest`，调用 `ConversionPipeline` |
 
-### Layer 2: 转换协调 (`src/ImeWlConverterCore/`)
+#### macOS GUI (`src/ImeWlConverterMac/`)
 
-| 文件 | 职责 | 行数 |
-|------|------|------|
-| `ConsoleRun.cs` | 接受 CLI 选项 → 配置 importer/exporter/filter → 调用 MainBody | ~430 |
-| `MainBody.cs` | 转换管道主体：Import → Filter → ChineseConvert → CodeGen → Export | ~840 |
-| `CommandLineOptions.cs` | CLI 选项 DTO |
-| `ConstantString.cs` | 所有格式的 ID 常量和显示名 |
+| 文件 | 职责 |
+|------|------|
+| `App.axaml.cs` | 应用入口，创建 DI 容器，注入 ViewModel |
+| `ViewModels/MainWindowViewModel.cs` | MVVM ViewModel，构建 `ConversionRequest`，调用 `IConversionPipeline` |
+| `Views/FilterConfigWindow.axaml.cs` | 过滤配置 UI，使用共享 `FilterConfig` DTO |
 
-### Layer 3: 格式实现
+#### Windows GUI (`src/IME WL Converter Win/`)
 
-**旧架构**（仍在使用）：`src/ImeWlConverterCore/IME/` — 每个格式一个类，同时实现 Import + Export
+| 文件 | 职责 |
+|------|------|
+| `Program.cs` | 应用入口，创建 DI 容器 |
+| `Forms/MainForm.cs` | 主窗口，构建 `ConversionRequest`，调用 `IConversionPipeline` |
+| `Forms/FilterConfigForm.cs` | 过滤配置 UI，使用共享 `FilterConfig` DTO |
 
-**新架构**（已建好）：`src/ImeWlConverter.Formats/` — 每个格式拆分为独立的 Importer 和 Exporter
+### Layer 2: 转换管道 (`src/ImeWlConverter.Core/Pipeline/`)
 
-| 基类 | 用途 | 位置 |
-|------|------|------|
-| `TextFormatImporter` | 文本格式导入（逐行解析） | `Formats/Shared/` |
-| `TextFormatExporter` | 文本格式导出（逐行生成） | `Formats/Shared/` |
-| `BinaryFormatImporter` | 二进制格式导入 | `Formats/Shared/` |
+| 文件 | 职责 |
+|------|------|
+| `ConversionPipeline.cs` | 完整 7 步转换管道（Import→Filter→ChineseConvert→WordRank→CodeGen→RemoveEmpty→Export） |
+| `FilterPipeline.cs` | 过滤执行器（单条过滤 → 变换 → 批量过滤） |
 
-### Layer 4: 核心基础设施
+`ConversionPipeline` 支持的能力：
+- **合并导出** / **逐文件导出**（`MergeToOneFile` 选项）
+- **文件输出** / **Stream 输出**（GUI 先预览再保存）
+- **从 FilterConfig 自动构建 FilterPipeline**
+- **IProgress 细粒度进度报告**
+- **CancellationToken 取消支持**
+- **逐文件错误捕获和累积**
+
+### Layer 3: 格式实现 (`src/ImeWlConverter.Formats/`)
+
+每个格式拆分为独立的 Importer 和 Exporter，通过 `[FormatPlugin]` 属性标记，Source Generator 自动注册到 DI。
+
+| 基类 | 用途 |
+|------|------|
+| `TextFormatImporter` | 文本格式导入（逐行解析） |
+| `TextFormatExporter` | 文本格式导出（逐行生成） |
+| `BinaryFormatImporter` | 二进制格式导入 |
+
+### Layer 4: 核心基础设施 (`src/ImeWlConverter.Core/`)
 
 | 目录 | 内容 |
 |------|------|
-| `Generaters/` | 编码生成器（拼音、五笔86/98、郑码、仓颉、注音等） |
-| `Filters/` | ISingleFilter / IBatchFilter / IReplaceFilter 实现 |
+| `CodeGeneration/Generators/` | 编码生成器（拼音、五笔86/98/新世纪、郑码、仓颉、注音、超音、二笔x4） |
+| `Filters/` | IWordFilter / IWordTransform / IBatchFilter 实现（12 种） |
 | `Helpers/` | 文件操作、编码检测、拼音字典、HTTP |
-| `Entities/` | WordLibrary, Code, ParsePattern, FilterConfig |
-| `Language/` | 简繁转换 |
-| `Resources/` | 嵌入式拼音/五笔/注音码表 |
+| `Language/` | 纯 .NET 简繁转换（基于 OpenCC 映射表） |
+| `WordRank/` | 默认词频生成器 |
+| `Resources/` | 嵌入式码表 + 简繁映射文件 |
 
-### Layer 5: 新抽象层 (`src/ImeWlConverter.Abstractions/`)
+### Layer 5: 抽象层 (`src/ImeWlConverter.Abstractions/`)
 
-纯接口和 DTO，零依赖。供新架构的所有层引用。
+纯接口和 DTO，零依赖。供所有层引用。
 
 | 子目录 | 关键类型 |
 |--------|---------|
-| `Contracts/` | IFormatImporter, IFormatExporter, IConversionPipeline, ICodeGenerator, IWordFilter, ILlmClient |
+| `Contracts/` | IFormatImporter, IFormatExporter, IConversionPipeline, ICodeGenerator, IWordFilter, IWordTransform, IBatchFilter |
 | `Models/` | WordEntry (sealed record), WordCode, FormatMetadata, ProgressInfo |
-| `Options/` | ConversionOptions, FilterOptions, CodeGenerationOptions |
-| `Results/` | Result\<T\>, ImportResult, ExportResult |
-| `Enums/` | CodeType, SortType, PinyinType |
+| `Options/` | ConversionOptions, FilterConfig, FilterOptions, CodeGenerationOptions, ImportOptions, ExportOptions |
+| `Results/` | Result\<T\>, ImportResult, ExportResult, ConversionRequest, ConversionResult |
+| `Enums/` | CodeType, SortType, PinyinType, ChineseConversionMode |
 
 ---
 
@@ -153,30 +196,37 @@ public sealed class MyFormatExporter : TextFormatExporter
 }
 ```
 
-```csharp
-// 4. 在 FormatRegistrar.cs 中注册（CLI 路径）
-Register(imports, exports, "myf", new MyLegacyClass()); // 如果有旧实现
-```
-
-```csharp
-// 5. 在旧 IME/ 目录中也创建对应类（当前 CLI 通过旧接口转换）
-[ComboBoxShow(ConstantString.MY_FORMAT, ConstantString.MY_FORMAT_C, 500)]
-public class MyFormat : BaseTextImport, IWordLibraryExport, IWordLibraryTextImport { ... }
-```
+Source Generator 会自动将带 `[FormatPlugin]` 的类注册到 DI 容器，无需手动注册。
 
 ### 修改过滤逻辑
 
-过滤器位于 `src/ImeWlConverterCore/Filters/`，实现 `ISingleFilter` 接口：
+过滤器位于 `src/ImeWlConverter.Core/Filters/`，实现接口：
 
 ```csharp
-public interface ISingleFilter { bool IsKeep(WordLibrary wl); }
+public interface IWordFilter { bool ShouldKeep(WordEntry entry); }
+public interface IWordTransform { WordEntry? Transform(WordEntry entry); }
+public interface IBatchFilter { IReadOnlyList<WordEntry> Filter(IReadOnlyList<WordEntry> entries); }
 ```
+
+`FilterConfig`（`Abstractions/Options/FilterConfig.cs`）定义了所有过滤选项，`ConversionPipeline` 内部的 `BuildFilterPipeline()` 方法将其转换为 `FilterPipeline` 实例。
 
 CLI 通过 `--filter` 参数启用过滤：`-f "len:2-10|rm:eng|rm:num"`
 
 ### 修改编码生成
 
-编码生成器位于 `src/ImeWlConverterCore/Generaters/`，实现 `IWordCodeGenerater` 接口。由 `CodeTypeHelper.GetGenerater(CodeType)` 工厂方法获取实例。
+编码生成器位于 `src/ImeWlConverter.Core/CodeGeneration/Generators/`，实现 `ICodeGenerator` 接口。通过 DI 注册，由 `CodeGenerationService` 根据 `CodeType` 选择对应生成器。
+
+### 修改转换管道行为
+
+转换管道位于 `src/ImeWlConverter.Core/Pipeline/ConversionPipeline.cs`。7 步流程：
+
+1. **Import** — 逐文件导入，累积所有 WordEntry
+2. **Filter** — 从 FilterConfig 构建 FilterPipeline 并应用
+3. **ChineseConvert** — 简繁转换
+4. **WordRank** — 词频生成
+5. **CodeGen** — 编码生成（拼音/五笔等）
+6. **RemoveEmpty** — 移除无编码词条
+7. **Export** — 导出到文件或 Stream
 
 ---
 
@@ -185,8 +235,23 @@ CLI 通过 `--filter` 参数启用过滤：`-f "len:2-10|rm:eng|rm:num"`
 ### 禁止操作
 
 - **禁止手动修改版本号**（由 MinVer 从 Git tag 生成，配置在 `src/Directory.Build.props`）
-- **禁止使用运行时反射注册格式**（CLI 已改用 `FormatRegistrar` 显式注册）
+- **禁止使用运行时反射注册格式**（Source Generator 自动注册）
 - **禁止硬编码路径分隔符**（用 `Path.Combine()`）
+- **禁止在 GUI 项目中重复实现转换逻辑**（统一使用 `IConversionPipeline`）
+
+### DI 注册模式
+
+三端使用相同的 DI 注册方式：
+
+```csharp
+var services = new ServiceCollection();
+services.AddAllFormats();           // Source Generator 生成的格式注册
+services.AddImeWlConverterCore();   // 管道、编码生成器、简繁转换、词频生成器
+var sp = services.BuildServiceProvider();
+
+// 获取管道
+var pipeline = sp.GetRequiredService<IConversionPipeline>();
+```
 
 ### 编码处理
 
@@ -199,6 +264,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 - CLI 工具为 framework-dependent（需 .NET 运行时）
 - macOS app bundle 为 self-contained（包含运行时）
+- Windows GUI 为 WinForms（仅 Windows）
 - 集成测试支持 Linux、macOS、Windows (Git Bash)
 
 ### 测试
@@ -222,9 +288,10 @@ GitHub Actions (`.github/workflows/ci.yml`)：
 
 | 决策 | 原因 |
 |------|------|
-| 保留旧 MainBody 转换路径 | 50+ 种格式的精确行为需要集成测试全部通过才能切换 |
+| 三端统一使用 ConversionPipeline | 消除重复转换逻辑，保证行为一致 |
+| FilterConfig 放在 Abstractions 层 | 三端共享过滤配置 DTO，避免各端重复定义 |
+| ConversionPipeline 支持 Stream 输出 | GUI 需要先预览内容再决定是否保存 |
 | CLI 用 FormatRegistrar 显式注册 | 消除反射，支持 AOT/Trimming |
-| Source Generator 注册新格式 | AI 添加格式只需加 `[FormatPlugin]` 属性 |
-| Adapter 模式新旧共存 | 渐进式迁移，每步可验证 |
+| Source Generator 注册新格式 | 添加格式只需加 `[FormatPlugin]` 属性 |
 | 测试串行执行 | 编码生成器有静态字典状态，并行会竞态 |
-| sealed record 实体 | 不可变性保证，AI 不会意外修改中间状态 |
+| sealed record 实体 | 不可变性保证，不会意外修改中间状态 |
