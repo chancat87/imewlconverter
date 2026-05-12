@@ -23,7 +23,7 @@ using ImeWlConverter.Abstractions.Enums;
 namespace Studyzy.IMEWLConverter;
 
 /// <summary>
-/// OperationSystem enum (local, replacing old Studyzy.IMEWLConverter.Entities.OperationSystem).
+/// OperationSystem enum for Rime configuration.
 /// </summary>
 public enum OperationSystem
 {

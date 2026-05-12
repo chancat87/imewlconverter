@@ -8,7 +8,7 @@ public sealed class ShuangpinReplacer : IWordTransform
 {
     private readonly Dictionary<string, string> _mapping;
 
-    // TODO: 当 Helper 迁移完成后，可从资源文件 Shuangpin.txt 加载映射
+    // 映射表通过构造函数注入，也可考虑从 Resources/Shuangpin.txt 加载
     public ShuangpinReplacer(Dictionary<string, string> mapping)
     {
         _mapping = mapping;

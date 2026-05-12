@@ -26,8 +26,7 @@ public sealed partial class PinyinJiaJiaImporter : TextFormatImporter
             hz.Append(line[j]);
             if (line[j + 1] > 'z') // next char is Chinese, no pinyin annotation
             {
-                // Use empty string as placeholder - the old code used PinyinGenerater
-                // In new architecture, pipeline will regenerate pinyin if needed
+                // Empty placeholder, pipeline will regenerate pinyin if needed
                 py.Add("");
             }
             else // followed by pinyin

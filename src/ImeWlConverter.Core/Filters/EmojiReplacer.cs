@@ -7,7 +7,7 @@ public sealed class EmojiReplacer : IWordTransform
 {
     private readonly Dictionary<string, string> _mapping;
 
-    // TODO: 当 Helper 迁移完成后，可从外部文件加载映射
+    // 映射表通过构造函数注入
     public EmojiReplacer(Dictionary<string, string> mapping)
     {
         _mapping = mapping;

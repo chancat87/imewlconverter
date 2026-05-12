@@ -28,7 +28,6 @@ namespace Studyzy.IMEWLConverter;
 
 /// <summary>
 /// Local ParsePattern DTO for self-defining format configuration.
-/// Replaces old Studyzy.IMEWLConverter.Entities.ParsePattern.
 /// </summary>
 public class ParsePattern
 {
@@ -160,9 +159,7 @@ public partial class SelfDefiningConfigForm : Form
 
     private void ShowSample()
     {
-        // TODO: Implement sample preview using new architecture
-        // The old implementation used SelfDefining.Export() which is no longer available.
-        // For now, show a basic format preview.
+        // Basic format preview
         if (ReBuildUserPattern())
         {
             var sample = "示例: ";

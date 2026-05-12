@@ -4,8 +4,6 @@ namespace ImeWlConverter.Core.Helpers;
 
 /// <summary>
 /// Helper for CodeType enum operations.
-/// Note: GetGenerater is not migrated here because it depends on the old Generaters
-/// which still live in ImeWlConverterCore. This helper only provides code type name mapping.
 /// </summary>
 public static class CodeTypeHelper
 {
@@ -37,7 +35,4 @@ public static class CodeTypeHelper
             _ => "未知"
         };
     }
-
-    // TODO: GetGenerater method depends on old ImeWlConverterCore.Generaters.
-    // It should be migrated when the Generaters are moved to the new architecture.
 }

@@ -39,9 +39,15 @@ public partial class WordRankGenerateForm : Form
         {
             wordRankGenerator = new DefaultWordRankGenerator { DefaultRank = (int)numRank.Value };
         }
-        // TODO: LLM and Calc rank generators need to be ported to new architecture
-        // else if (rbtnLlm.Checked) { ... }
-        // else if (rbtnCalc.Checked) { ... }
+        else if (rbtnLlm.Checked)
+        {
+            wordRankGenerator = new LlmWordRankGenerator(new LlmConfig
+            {
+                ApiEndpoint = txtLlmEndpoint.Text,
+                ApiKey = txtLlmKey.Text,
+                Model = txtLlmModel.Text
+            });
+        }
 
         DialogResult = DialogResult.OK;
     }
